@@ -1,7 +1,9 @@
 package supermarket.product;
 
 import supermarket.SupermarketConfig;
+
 import java.time.LocalDate;
+import java.util.Locale;
 
 public abstract class Product {
     protected final String id;
@@ -41,19 +43,45 @@ public abstract class Product {
         return productionDate.plusDays(shelfLifeDays);
     }
 
-    public String getId() { return id; }
-    public String getBatchId() { return batchId; }
-    public String getName() { return name; }
-    public ProductType getType() { return type; }
-    public double getPrice() { return price; }
-    public LocalDate getProductionDate() { return productionDate; }
-    public int getShelfLifeDays() { return shelfLifeDays; }
-    public double getDiscount() { return discount; }
-    public void setDiscount(double discount) { this.discount = discount; }
+    public String getId() {
+        return id;
+    }
+
+    public String getBatchId() {
+        return batchId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public ProductType getType() {
+        return type;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public LocalDate getProductionDate() {
+        return productionDate;
+    }
+
+    public int getShelfLifeDays() {
+        return shelfLifeDays;
+    }
+
+    public double getDiscount() {
+        return discount;
+    }
+
+    public void setDiscount(double discount) {
+        this.discount = discount;
+    }
 
     @Override
     public String toString() {
-        return String.format("%s [%s] - %.2f руб. (скидка: %.0f%%)",
+        return String.format(Locale.US, "%s [%s] - %.2f руб. (скидка: %.0f%%)",
                 name, id, getFinalPrice(), discount * 100);
     }
 }

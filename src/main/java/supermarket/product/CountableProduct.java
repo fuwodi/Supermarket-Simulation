@@ -11,8 +11,14 @@ public class CountableProduct extends Product {
         this.quantity = quantity;
     }
 
-    public int getQuantity() { return quantity; }
-    public void setQuantity(int quantity) { this.quantity = quantity; }
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
+    }
+
     public void decreaseQuantity(int amount) {
         this.quantity = Math.max(0, this.quantity - amount);
     }
