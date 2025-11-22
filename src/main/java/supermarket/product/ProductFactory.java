@@ -11,10 +11,10 @@ public class ProductFactory {
 
         String id = generateId(type);
         String batchId = "BATCH_" + LocalDate.now();
-        LocalDate productionDate = LocalDate.now().minusDays(random.nextInt(10));
+        LocalDate productionDate = LocalDate.now().minusDays(random.nextInt(5));
         int shelfLife = type.getShelfLifeDays();
 
-        if (isCountableType(type)) {
+        if (ProductCatalog.isCountableType(type)) {
             int quantity = 20 + random.nextInt(30);
             return new CountableProduct(id, batchId, info.getName(), type,
                     info.getBasePrice(), productionDate, shelfLife, quantity);
@@ -25,19 +25,19 @@ public class ProductFactory {
         }
     }
 
-    public static Product createSpecificProduct(String productName, ProductType type) {
-        ProductCatalog.ProductInfo info = findProductInfoByName(productName, type);
+    public static Product createProductByName(String productName) {
+        ProductCatalog.ProductInfo info = ProductCatalog.findProductByName(productName);
         if (info == null) {
-            info = ProductCatalog.getRandomProductInfo(type);
+            throw new IllegalArgumentException("Продукт не найден: " + productName);
         }
 
+        ProductType type = ProductCatalog.getProductType(productName);
         String id = generateId(type);
         String batchId = "BATCH_" + LocalDate.now();
-        LocalDate productionDate = LocalDate.now();
+        LocalDate productionDate = LocalDate.now().minusDays(random.nextInt(3));
         int shelfLife = type.getShelfLifeDays();
 
-
-        if (isCountableType(type)) {
+        if (ProductCatalog.isCountableType(type)) {
             int quantity = 25;
             return new CountableProduct(id, batchId, info.getName(), type,
                     info.getBasePrice(), productionDate, shelfLife, quantity);
@@ -46,19 +46,6 @@ public class ProductFactory {
             return new WeightableProduct(id, batchId, info.getName(), type,
                     info.getBasePrice(), productionDate, shelfLife, weight);
         }
-    }
-
-    private static ProductCatalog.ProductInfo findProductInfoByName(String name, ProductType type) {
-        for (ProductCatalog.ProductInfo info : ProductCatalog.getAllProductsForType(type)) {
-            if (info.getName().equals(name)) {
-                return info;
-            }
-        }
-        return null;
-    }
-
-    private static boolean isCountableType(ProductType type) {
-        return type != ProductType.VEGETABLES && type != ProductType.MEAT;
     }
 
     private static String generateId(ProductType type) {

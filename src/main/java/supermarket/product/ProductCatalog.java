@@ -1,14 +1,13 @@
-// ProductCatalog.java
 package supermarket.product;
 
 import java.util.*;
 
 public class ProductCatalog {
-    private static final Map<ProductType, List<ProductInfo>> PRODUCT_CATALOG = new HashMap<>();
+    private static final Map<String, ProductInfo> productsByName = new HashMap<>();
+    private static final Map<ProductType, List<ProductInfo>> productsByType = new HashMap<>();
 
     static {
-
-        PRODUCT_CATALOG.put(ProductType.DAIRY, Arrays.asList(
+        addProducts(ProductType.DAIRY, Arrays.asList(
                 new ProductInfo("Молоко", 80.0),
                 new ProductInfo("Йогурт", 60.0),
                 new ProductInfo("Сметана", 90.0),
@@ -19,7 +18,7 @@ public class ProductCatalog {
                 new ProductInfo("Сливки", 110.0)
         ));
 
-        PRODUCT_CATALOG.put(ProductType.BAKERY, Arrays.asList(
+        addProducts(ProductType.BAKERY, Arrays.asList(
                 new ProductInfo("Хлеб белый", 50.0),
                 new ProductInfo("Хлеб черный", 55.0),
                 new ProductInfo("Батон", 45.0),
@@ -30,7 +29,7 @@ public class ProductCatalog {
                 new ProductInfo("Сухари", 80.0)
         ));
 
-        PRODUCT_CATALOG.put(ProductType.MEAT, Arrays.asList(
+        addProducts(ProductType.MEAT, Arrays.asList(
                 new ProductInfo("Говядина", 400.0),
                 new ProductInfo("Свинина", 350.0),
                 new ProductInfo("Курица", 250.0),
@@ -41,7 +40,7 @@ public class ProductCatalog {
                 new ProductInfo("Бекон", 450.0)
         ));
 
-        PRODUCT_CATALOG.put(ProductType.VEGETABLES, Arrays.asList(
+        addProducts(ProductType.VEGETABLES, Arrays.asList(
                 new ProductInfo("Картофель", 40.0),
                 new ProductInfo("Морковь", 50.0),
                 new ProductInfo("Помидоры", 150.0),
@@ -52,7 +51,7 @@ public class ProductCatalog {
                 new ProductInfo("Лук", 30.0)
         ));
 
-        PRODUCT_CATALOG.put(ProductType.GROCERIES, Arrays.asList(
+        addProducts(ProductType.GROCERIES, Arrays.asList(
                 new ProductInfo("Макароны", 60.0),
                 new ProductInfo("Рис", 80.0),
                 new ProductInfo("Гречка", 70.0),
@@ -63,7 +62,7 @@ public class ProductCatalog {
                 new ProductInfo("Чай", 120.0)
         ));
 
-        PRODUCT_CATALOG.put(ProductType.CHEMICALS, Arrays.asList(
+        addProducts(ProductType.CHEMICALS, Arrays.asList(
                 new ProductInfo("Стиральный порошок", 200.0),
                 new ProductInfo("Мыло", 40.0),
                 new ProductInfo("Шампунь", 180.0),
@@ -74,8 +73,7 @@ public class ProductCatalog {
                 new ProductInfo("Кондиционер для белья", 160.0)
         ));
 
-        // Алкоголь
-        PRODUCT_CATALOG.put(ProductType.ALCOHOL, Arrays.asList(
+        addProducts(ProductType.ALCOHOL, Arrays.asList(
                 new ProductInfo("Пиво", 120.0),
                 new ProductInfo("Вино красное", 400.0),
                 new ProductInfo("Вино белое", 380.0),
@@ -87,8 +85,19 @@ public class ProductCatalog {
         ));
     }
 
+    private static void addProducts(ProductType type, List<ProductInfo> products) {
+        productsByType.put(type, products);
+        for (ProductInfo product : products) {
+            productsByName.put(product.getName().toLowerCase(), product);
+        }
+    }
+
+    public static ProductInfo findProductByName(String name) {
+        return productsByName.get(name.toLowerCase());
+    }
+
     public static ProductInfo getRandomProductInfo(ProductType type) {
-        List<ProductInfo> products = PRODUCT_CATALOG.get(type);
+        List<ProductInfo> products = productsByType.get(type);
         if (products == null || products.isEmpty()) {
             return new ProductInfo("Товар", 100.0);
         }
@@ -96,7 +105,35 @@ public class ProductCatalog {
     }
 
     public static List<ProductInfo> getAllProductsForType(ProductType type) {
-        return new ArrayList<>(PRODUCT_CATALOG.getOrDefault(type, new ArrayList<>()));
+        return new ArrayList<>(productsByType.getOrDefault(type, new ArrayList<>()));
+    }
+
+    public static List<ProductInfo> getAllProducts() {
+        List<ProductInfo> allProducts = new ArrayList<>();
+        for (List<ProductInfo> products : productsByType.values()) {
+            allProducts.addAll(products);
+        }
+        return allProducts;
+    }
+
+    public static boolean productExists(String name) {
+        return productsByName.containsKey(name.toLowerCase());
+    }
+
+    public static ProductType getProductType(String name) {
+        ProductInfo productInfo = findProductByName(name);
+        if (productInfo != null) {
+            for (Map.Entry<ProductType, List<ProductInfo>> entry : productsByType.entrySet()) {
+                if (entry.getValue().contains(productInfo)) {
+                    return entry.getKey();
+                }
+            }
+        }
+        return null;
+    }
+
+    public static boolean isCountableType(ProductType type) {
+        return type != ProductType.VEGETABLES && type != ProductType.MEAT;
     }
 
     public static class ProductInfo {

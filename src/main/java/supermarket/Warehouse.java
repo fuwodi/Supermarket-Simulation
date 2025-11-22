@@ -1,13 +1,9 @@
 package supermarket;
 
-import supermarket.product.CountableProduct;
-import supermarket.product.Product;
-import supermarket.product.ProductType;
-import supermarket.product.WeightableProduct;
+import supermarket.product.*;
 
 import java.time.LocalDate;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class Warehouse {
     private Map<String, Product> products;
@@ -29,61 +25,105 @@ public class Warehouse {
         return products.get(productId);
     }
 
+    public List<Product> findProductsByName(String productName) {
+        List<Product> result = new ArrayList<>();
+        for (Product product : products.values()) {
+            if (product.getName().equalsIgnoreCase(productName)) {
+                result.add(product);
+            }
+        }
+        return result;
+    }
+
+    public List<Product> findProductsByNameAndType(String name, ProductType type) {
+        List<Product> result = new ArrayList<>();
+        for (Product product : products.values()) {
+            if (product.getName().equalsIgnoreCase(name) && product.getType() == type) {
+                result.add(product);
+            }
+        }
+        return result;
+    }
+
     public void removeProduct(String productId) {
         products.remove(productId);
     }
 
-
-    public Product transferProduct(String productId, int quantity, LocalDate currentDate) {
+    public Product transferProduct(String productId, int requestedQuantity, LocalDate currentDate) {
         Product product = products.get(productId);
         if (product instanceof CountableProduct) {
             CountableProduct countable = (CountableProduct) product;
-            if (countable.getQuantity() >= quantity && !countable.isExpired(currentDate)) {
-                CountableProduct forHall = new CountableProduct(
-                        productId, countable.getBatchId(), countable.getName(),
-                        countable.getType(), countable.getPrice(),
-                        countable.getProductionDate(), countable.getShelfLifeDays(),
-                        quantity
-                );
-                forHall.setDiscount(countable.getDiscount());
 
-                countable.setQuantity(countable.getQuantity() - quantity);
+            if (!countable.isExpired(currentDate)) {
+                int availableQuantity = countable.getQuantity();
+                int transferQuantity = Math.min(requestedQuantity, availableQuantity);
 
-                if (countable.getQuantity() == 0) {
-                    products.remove(productId);
+                if (transferQuantity > 0) {
+                    CountableProduct forHall = new CountableProduct(
+                            productId, countable.getBatchId(), countable.getName(),
+                            countable.getType(), countable.getPrice(),
+                            countable.getProductionDate(), countable.getShelfLifeDays(),
+                            transferQuantity
+                    );
+
+                    countable.setQuantity(availableQuantity - transferQuantity);
+
+                    if (countable.getQuantity() == 0) {
+                        products.remove(productId);
+                    }
+
+                   //подумать
+                    if (transferQuantity < requestedQuantity) {
+                        int missingQuantity = requestedQuantity - transferQuantity;
+                        System.out.println("⚠️ Внимание: запрошено " + requestedQuantity +
+                                " шт. '" + countable.getName() + "', но доступно только " +
+                                transferQuantity + " шт. Не хватает: " + missingQuantity + " шт. Требуется заказ!");
+                    }
+
+                    return forHall;
                 }
-
-                return forHall;
             }
         }
         return null;
     }
 
-    public Product transferProduct(String productId, double weight, LocalDate currentDate) {
+    public Product transferProduct(String productId, double requestedWeight, LocalDate currentDate) {
         Product product = products.get(productId);
         if (product instanceof WeightableProduct) {
             WeightableProduct weightable = (WeightableProduct) product;
-            if (weightable.getWeight() >= weight && !weightable.isExpired(currentDate)) {
-                WeightableProduct forHall = new WeightableProduct(
-                        productId, weightable.getBatchId(), weightable.getName(),
-                        weightable.getType(), weightable.getPrice(),
-                        weightable.getProductionDate(), weightable.getShelfLifeDays(),
-                        weight
-                );
-                forHall.setDiscount(weightable.getDiscount());
 
-                weightable.setWeight(weightable.getWeight() - weight);
+            if (!weightable.isExpired(currentDate)) {
+                double availableWeight = weightable.getWeight();
+                double transferWeight = Math.min(requestedWeight, availableWeight);
 
-                if (weightable.getWeight() == 0) {
-                    products.remove(productId);
+                if (transferWeight > 0) {
+                    WeightableProduct forHall = new WeightableProduct(
+                            productId, weightable.getBatchId(), weightable.getName(),
+                            weightable.getType(), weightable.getPrice(),
+                            weightable.getProductionDate(), weightable.getShelfLifeDays(),
+                            transferWeight
+                    );
+
+                    weightable.setWeight(availableWeight - transferWeight);
+
+                    if (weightable.getWeight() == 0) {
+                        products.remove(productId);
+                    }
+
+
+                    if (transferWeight < requestedWeight) {
+                        double missingWeight = requestedWeight - transferWeight;
+                        System.out.println("⚠️ Внимание: запрошено " + requestedWeight +
+                                " кг '" + weightable.getName() + "', но доступно только " +
+                                transferWeight + " кг. Не хватает: " + missingWeight + " кг. Требуется заказ!");
+                    }
+
+                    return forHall;
                 }
-
-                return forHall;
             }
         }
         return null;
     }
-
 
     public int removeExpiredProducts(LocalDate currentDate) {
         int removed = 0;
@@ -97,72 +137,6 @@ public class Warehouse {
             }
         }
         return removed;
-    }
-
-
-    public List<ProductType> getProductsToReorder() {
-        Map<ProductType, Integer> typeCounts = new HashMap<>();
-
-        for (Product product : products.values()) {
-            if (product instanceof CountableProduct) {
-                int quantity = ((CountableProduct) product).getQuantity();
-                typeCounts.merge(product.getType(), quantity, Integer::sum);
-            }
-        }
-
-        return typeCounts.entrySet().stream()
-                .filter(entry -> entry.getValue() <= SupermarketConfig.REORDER_THRESHOLD)
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
-    }
-
-
-    public List<Product> autoRestockProducts(SalesHall salesHall, LocalDate currentDate) {
-        List<Product> restockedProducts = new ArrayList<>();
-
-        for (Product hallProduct : salesHall.getProductsList()) {
-            boolean needsRestock = false;
-            String productId = hallProduct.getId();
-
-            if (hallProduct instanceof CountableProduct) {
-                CountableProduct countable = (CountableProduct) hallProduct;
-                if (countable.getQuantity() <= SupermarketConfig.LOW_STOCK_THRESHOLD) {
-                    needsRestock = true;
-                }
-            } else if (hallProduct instanceof WeightableProduct) {
-                WeightableProduct weightable = (WeightableProduct) hallProduct;
-                if (weightable.getWeight() <= SupermarketConfig.WEIGHT_LOW_STOCK) {
-                    needsRestock = true;
-                }
-            }
-
-            if (needsRestock) {
-                Product transferred = transferProductForRestock(productId, currentDate);
-                if (transferred != null) {
-                    restockedProducts.add(transferred);
-                }
-            }
-        }
-
-        return restockedProducts;
-    }
-
-    private Product transferProductForRestock(String productId, LocalDate currentDate) {
-        Product product = products.get(productId);
-        if (product instanceof CountableProduct) {
-            CountableProduct countable = (CountableProduct) product;
-            int transferAmount = Math.min(countable.getQuantity(), 10);
-            if (transferAmount > 0) {
-                return transferProduct(productId, transferAmount, currentDate);
-            }
-        } else if (product instanceof WeightableProduct) {
-            WeightableProduct weightable = (WeightableProduct) product;
-            double transferAmount = Math.min(weightable.getWeight(), 5.0);
-            if (transferAmount > 0) {
-                return transferProduct(productId, transferAmount, currentDate);
-            }
-        }
-        return null;
     }
 
     public Map<String, Product> getAllProducts() {

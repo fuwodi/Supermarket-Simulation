@@ -14,11 +14,10 @@ public class SalesHall {
         this.products = new HashMap<>();
     }
 
-
     public void addProduct(Product product) {
         products.put(product.getId(), product);
     }
-
+//добавить проверку сроков
     public void updateProduct(Product product) {
         Product existing = products.get(product.getId());
         if (existing != null) {
@@ -34,6 +33,16 @@ public class SalesHall {
         } else {
             products.put(product.getId(), product);
         }
+    }
+
+    public List<Product> findProductsByName(String productName) {
+        List<Product> result = new ArrayList<>();
+        for (Product product : products.values()) {
+            if (product.getName().equalsIgnoreCase(productName)) {
+                result.add(product);
+            }
+        }
+        return result;
     }
 
     public Product purchaseProduct(String productId, int quantity) {
@@ -100,9 +109,24 @@ public class SalesHall {
         return removed;
     }
 
+    public void applyDiscountToProduct(String productName, double discount) {
+        for (Product product : products.values()) {
+            if (product.getName().equalsIgnoreCase(productName)) {
+                product.setDiscount(discount);
+            }
+        }
+    }
+
+    public void applyDiscountToProductById(String productId, double discount) {
+        Product product = products.get(productId);
+        if (product != null) {
+            product.setDiscount(discount);
+        }
+    }
+
     public void applyExpiringDiscounts(LocalDate currentDate) {
         int discountCount = 0;
-        for (Product product : products.values()) {  // Исправлено: используем values()
+        for (Product product : products.values()) {
             if (product.expiresSoon(currentDate) && product.getDiscount() < SupermarketConfig.EXPIRING_DISCOUNT) {
                 product.setDiscount(SupermarketConfig.EXPIRING_DISCOUNT);
                 discountCount++;
@@ -116,7 +140,7 @@ public class SalesHall {
     public void applyRandomDiscounts() {
         Random random = new Random();
         int discountCount = 0;
-        for (Product product : products.values()) {  // Исправлено: используем values()
+        for (Product product : products.values()) {
             if (random.nextDouble() < 0.15) {
                 double discount = SupermarketConfig.RANDOM_DISCOUNT_MIN +
                         random.nextDouble() * (SupermarketConfig.RANDOM_DISCOUNT_MAX - SupermarketConfig.RANDOM_DISCOUNT_MIN);
@@ -125,9 +149,50 @@ public class SalesHall {
             }
         }
         if (discountCount > 0) {
-            System.out.println(" Установлены случайные скидки на " + discountCount + " товаров");
+            System.out.println("🎲 Установлены случайные скидки на " + discountCount + " товаров");
         }
     }
+
+    public void removeAllDiscounts() {
+        for (Product product : products.values()) {
+            product.setDiscount(0.0);
+        }
+    }
+
+    // МЕТОДЫ ДЛЯ ПРОВЕРКИ ЗАПАСОВ
+    public List<Product> getLowStockProducts() {
+        List<Product> lowStock = new ArrayList<>();
+        for (Product product : products.values()) {
+            if (isLowStock(product)) {
+                lowStock.add(product);
+            }
+        }
+        return lowStock;
+    }
+
+    private boolean isLowStock(Product product) {
+        if (product instanceof CountableProduct) {
+            CountableProduct countable = (CountableProduct) product;
+            return countable.getQuantity() < SupermarketConfig.SALES_HALL_MIN_COUNTABLE;
+        } else if (product instanceof WeightableProduct) {
+            WeightableProduct weightable = (WeightableProduct) product;
+            return weightable.getWeight() < SupermarketConfig.SALES_HALL_MIN_WEIGHTABLE;
+        }
+        return false;
+    }
+
+    public double calculateTotalRevenue() {
+        double total = 0.0;
+        for (Product product : products.values()) {
+            if (product instanceof CountableProduct) {
+                total += product.getFinalPrice() * ((CountableProduct) product).getQuantity();
+            } else if (product instanceof WeightableProduct) {
+                total += product.getFinalPrice() * ((WeightableProduct) product).getWeight();
+            }
+        }
+        return total;
+    }
+
 
     public Map<String, Product> getAllProducts() {
         return new HashMap<>(products);
@@ -135,7 +200,7 @@ public class SalesHall {
 
     public List<Product> getProductsList() {
         return new ArrayList<>(products.values());
-    } // Исправленный метод
+    }
 
     public int getTotalProducts() {
         return products.size();
@@ -143,5 +208,9 @@ public class SalesHall {
 
     public Collection<Product> getProductsCollection() {
         return products.values();
+    }
+
+    public Product getProduct(String productId) {
+        return products.get(productId);
     }
 }
