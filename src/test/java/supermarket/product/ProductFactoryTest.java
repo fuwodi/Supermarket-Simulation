@@ -8,8 +8,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class ProductFactoryTest {
 
     @Test
-    void testCreateCountableProductByName() {
-        Product product = ProductFactory.createProductByName("Молоко");
+    void testCreateCountableProductById() {
+        Product product = ProductFactory.createProductById("MILK");
 
         assertNotNull(product);
         assertTrue(product instanceof CountableProduct);
@@ -20,8 +20,8 @@ class ProductFactoryTest {
     }
 
     @Test
-    void testCreateWeightableProductByName() {
-        Product product = ProductFactory.createProductByName("Картофель");
+    void testCreateWeightableProductById() {
+        Product product = ProductFactory.createProductById("POTATO");
 
         assertNotNull(product);
         assertTrue(product instanceof WeightableProduct);
@@ -32,17 +32,17 @@ class ProductFactoryTest {
     }
 
     @Test
-    void testCreateProductWithNonExistingNameThrowsException() {
+    void testCreateProductWithNonExistingIdThrowsException() {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-            ProductFactory.createProductByName("Несуществующий товар");
+            ProductFactory.createProductById("NON_EXISTING_ID");
         });
 
-        assertEquals("Продукт не найден: Несуществующий товар", exception.getMessage());
+        assertEquals("Продукт не найден по ID: NON_EXISTING_ID", exception.getMessage());
     }
 
     @Test
     void testProductionDateIsSet() {
-        Product product = ProductFactory.createProductByName("Хлеб белый");
+        Product product = ProductFactory.createProductById("WHITE_BREAD");
 
         assertNotNull(product.getProductionDate());
         assertFalse(product.getProductionDate().isAfter(LocalDate.now()));
@@ -50,9 +50,9 @@ class ProductFactoryTest {
 
     @Test
     void testShelfLifeForDifferentTypes() {
-        Product dairy = ProductFactory.createProductByName("Молоко");
-        Product bakery = ProductFactory.createProductByName("Хлеб белый");
-        Product chemicals = ProductFactory.createProductByName("Мыло");
+        Product dairy = ProductFactory.createProductById("MILK");
+        Product bakery = ProductFactory.createProductById("WHITE_BREAD");
+        Product chemicals = ProductFactory.createProductById("SOAP");
 
         assertEquals(ProductType.DAIRY.getShelfLifeDays(), dairy.getShelfLifeDays());
         assertEquals(ProductType.BAKERY.getShelfLifeDays(), bakery.getShelfLifeDays());
@@ -61,10 +61,11 @@ class ProductFactoryTest {
 
     @Test
     void testProductBasicValidity() {
-        Product product = ProductFactory.createProductByName("Сыр");
+        Product product = ProductFactory.createProductById("CHEESE");
 
         assertNotNull(product);
         assertNotNull(product.getId());
+        assertEquals("CHEESE", product.getId());
         assertNotNull(product.getName());
         assertTrue(product.getPrice() > 0);
         assertTrue(product.getShelfLifeDays() > 0);
@@ -75,36 +76,56 @@ class ProductFactoryTest {
 
     @Test
     void testCreateRandomProduct() {
-        Product product = ProductFactory.createRandomProduct(ProductType.DAIRY);
+        Product dairyProduct = ProductFactory.createRandomProduct(ProductType.DAIRY);
 
-        assertNotNull(product);
-        assertNotNull(product.getId());
-        assertNotNull(product.getName());
-        assertTrue(product.getPrice() > 0);
-        assertTrue(product.getShelfLifeDays() > 0);
-        assertNotNull(product.getProductionDate());
+        assertNotNull(dairyProduct);
+        assertNotNull(dairyProduct.getId());
+        assertTrue(dairyProduct.getId().matches("MILK|YOGURT|SOUR_CREAM|COTTAGE_CHEESE|CHEESE|KEFIR|RYAZHENKA|CREAM"));
+        assertNotNull(dairyProduct.getName());
+        assertTrue(dairyProduct.getPrice() > 0);
+        assertTrue(dairyProduct.getShelfLifeDays() > 0);
+        assertNotNull(dairyProduct.getProductionDate());
 
-        if (product instanceof CountableProduct) {
-            int quantity = ((CountableProduct) product).getQuantity();
-            assertTrue(quantity >= 20 && quantity <= 50);
-        } else if (product instanceof WeightableProduct) {
-            double weight = ((WeightableProduct) product).getWeight();
-            assertTrue(weight >= 5.0 && weight <= 15.0);
-        }
+        assertTrue(dairyProduct instanceof CountableProduct);
+        int quantity = ((CountableProduct) dairyProduct).getQuantity();
+        assertTrue(quantity >= 20 && quantity <= 50);
+
+        Product vegetableProduct = ProductFactory.createRandomProduct(ProductType.VEGETABLES);
+
+        assertNotNull(vegetableProduct);
+        assertNotNull(vegetableProduct.getId());
+        assertTrue(vegetableProduct.getId().matches("POTATO|CARROT|TOMATO|CUCUMBER|APPLE|BANANA|ORANGE|ONION"));
+        assertNotNull(vegetableProduct.getName());
+        assertTrue(vegetableProduct.getPrice() > 0);
+        assertTrue(vegetableProduct.getShelfLifeDays() > 0);
+        assertNotNull(vegetableProduct.getProductionDate());
+
+        assertTrue(vegetableProduct instanceof WeightableProduct);
+        double weight = ((WeightableProduct) vegetableProduct).getWeight();
+        assertTrue(weight >= 5.0 && weight <= 15.0);
+
+        assertEquals(ProductType.DAIRY, dairyProduct.getType());
+        assertEquals(ProductType.VEGETABLES, vegetableProduct.getType());
+        assertNotEquals(dairyProduct.getType(), vegetableProduct.getType());
+
+        assertNotEquals(dairyProduct.getBatchId(), vegetableProduct.getBatchId());
     }
 
     @Test
-    void testProductIdGeneration() {
-        Product product = ProductFactory.createProductByName("Йогурт");
+    void testProductIdIsConstant() {
+        Product product1 = ProductFactory.createProductById("YOGURT");
+        Product product2 = ProductFactory.createProductById("YOGURT");
 
-        assertNotNull(product.getId());
-        assertTrue(product.getId().startsWith("DAI_"));
-        assertTrue(product.getId().contains("_"));
+        assertEquals("YOGURT", product1.getId());
+        assertEquals("YOGURT", product2.getId());
+        assertEquals(product1.getId(), product2.getId());
+
+        assertNotEquals(product1.getBatchId(), product2.getBatchId());
     }
 
     @Test
     void testDefaultDiscountIsZero() {
-        Product product = ProductFactory.createProductByName("Молоко");
+        Product product = ProductFactory.createProductById("MILK");
 
         assertEquals(0.0, product.getDiscount());
         assertEquals(product.getPrice(), product.getFinalPrice());
@@ -112,14 +133,27 @@ class ProductFactoryTest {
 
     @Test
     void testCreatingProductsFromDifferentCategories() {
-        Product dairy = ProductFactory.createProductByName("Молоко");
-        Product meat = ProductFactory.createProductByName("Говядина");
-        Product grocery = ProductFactory.createProductByName("Рис");
-        Product alcohol = ProductFactory.createProductByName("Пиво");
+        Product dairy = ProductFactory.createProductById("MILK");
+        Product meat = ProductFactory.createProductById("BEEF");
+        Product grocery = ProductFactory.createProductById("RICE");
+        Product alcohol = ProductFactory.createProductById("BEER");
 
         assertEquals(ProductType.DAIRY, dairy.getType());
         assertEquals(ProductType.MEAT, meat.getType());
         assertEquals(ProductType.GROCERIES, grocery.getType());
         assertEquals(ProductType.ALCOHOL, alcohol.getType());
+    }
+
+    @Test
+    void testBatchIdGeneration() {
+        Product product1 = ProductFactory.createProductById("MILK");
+        Product product2 = ProductFactory.createProductById("MILK");
+
+        assertNotNull(product1.getBatchId());
+        assertNotNull(product2.getBatchId());
+        assertTrue(product1.getBatchId().startsWith("BATCH_"));
+        assertTrue(product2.getBatchId().startsWith("BATCH_"));
+
+        assertNotEquals(product1.getBatchId(), product2.getBatchId());
     }
 }

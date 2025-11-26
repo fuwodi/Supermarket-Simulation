@@ -32,7 +32,9 @@ public abstract class Product {
     }
 
     public boolean expiresSoon(LocalDate currentDate) {
-        return currentDate.plusDays(SupermarketConfig.DAYS_FOR_DISCOUNT).isAfter(productionDate.plusDays(shelfLifeDays));
+        LocalDate expiryDate = productionDate.plusDays(shelfLifeDays);
+        return !currentDate.plusDays(SupermarketConfig.DAYS_FOR_DISCOUNT)
+                .isBefore(expiryDate);
     }
 
     public double getFinalPrice() {

@@ -1,6 +1,7 @@
 package supermarket.product;
 
 import org.junit.jupiter.api.Test;
+import supermarket.SupermarketConfig;
 
 import java.time.LocalDate;
 
@@ -16,6 +17,7 @@ class ProductTest {
         );
 
         assertEquals("CP001", product.getId());
+        assertEquals("BATCH001", product.getBatchId());
         assertEquals("Молоко", product.getName());
         assertEquals(ProductType.DAIRY, product.getType());
         assertEquals(80.0, product.getPrice());
@@ -31,6 +33,7 @@ class ProductTest {
         );
 
         assertEquals("WP001", product.getId());
+        assertEquals("BATCH002", product.getBatchId());
         assertEquals("Яблоки", product.getName());
         assertEquals(ProductType.VEGETABLES, product.getType());
         assertEquals(100.0, product.getPrice());
@@ -52,9 +55,25 @@ class ProductTest {
     }
 
     @Test
+    void testExpiresSoon() {
+        CountableProduct product = new CountableProduct(
+                "CP003", "BATCH004", "Молоко", ProductType.DAIRY, 80.0,
+                LocalDate.of(2024, 1, 1), 5, 10
+        );
+
+        // За 2 дня до истечения срока (должен быть true)
+        LocalDate nearExpiry = LocalDate.of(2024, 1, 4);
+        assertTrue(product.expiresSoon(nearExpiry));
+
+        // За 3 дня до истечения срока (должен быть false)
+        LocalDate notNearExpiry = LocalDate.of(2024, 1, 3);
+        assertFalse(product.expiresSoon(notNearExpiry));
+    }
+
+    @Test
     void testGetFinalPrice() {
         CountableProduct product = new CountableProduct(
-                "CP003", "BATCH004", "Хлеб", ProductType.BAKERY, 50.0,
+                "CP004", "BATCH005", "Хлеб", ProductType.BAKERY, 50.0,
                 LocalDate.now(), 3, 5
         );
 
@@ -67,7 +86,7 @@ class ProductTest {
     @Test
     void testGetExpiryDate() {
         CountableProduct product = new CountableProduct(
-                "CP004", "BATCH005", "Сыр", ProductType.DAIRY, 300.0,
+                "CP005", "BATCH006", "Сыр", ProductType.DAIRY, 300.0,
                 LocalDate.of(2024, 1, 1), 10, 3
         );
 
@@ -78,7 +97,7 @@ class ProductTest {
     @Test
     void testCountableProductDecreaseQuantity() {
         CountableProduct product = new CountableProduct(
-                "CP005", "BATCH006", "Кефир", ProductType.DAIRY, 70.0,
+                "CP006", "BATCH007", "Кефир", ProductType.DAIRY, 70.0,
                 LocalDate.now(), 5, 10
         );
 
@@ -92,7 +111,7 @@ class ProductTest {
     @Test
     void testWeightableProductDecreaseWeight() {
         WeightableProduct product = new WeightableProduct(
-                "WP002", "BATCH007", "Картофель", ProductType.VEGETABLES, 40.0,
+                "WP003", "BATCH008", "Картофель", ProductType.VEGETABLES, 40.0,
                 LocalDate.now(), 14, 10.0
         );
 
@@ -103,7 +122,7 @@ class ProductTest {
     @Test
     void testToString() {
         CountableProduct product = new CountableProduct(
-                "CP006", "BATCH008", "Творог", ProductType.DAIRY, 120.0,
+                "CP007", "BATCH009", "Творог", ProductType.DAIRY, 120.0,
                 LocalDate.now(), 7, 8
         );
 
@@ -111,8 +130,30 @@ class ProductTest {
         String result = product.toString();
 
         assertTrue(result.contains("Творог"));
-        assertTrue(result.contains("CP006"));
+        assertTrue(result.contains("CP007"));
         assertTrue(result.contains("108.00"));
-        assertTrue(result.contains("8 шт."));
+        assertTrue(result.contains("скидка: 10%"));
+    }
+
+    @Test
+    void testSetQuantity() {
+        CountableProduct product = new CountableProduct(
+                "CP008", "BATCH010", "Йогурт", ProductType.DAIRY, 60.0,
+                LocalDate.now(), 7, 5
+        );
+
+        product.setQuantity(15);
+        assertEquals(15, product.getQuantity());
+    }
+
+    @Test
+    void testSetWeight() {
+        WeightableProduct product = new WeightableProduct(
+                "WP004", "BATCH011", "Морковь", ProductType.VEGETABLES, 50.0,
+                LocalDate.now(), 10, 8.0
+        );
+
+        product.setWeight(12.5);
+        assertEquals(12.5, product.getWeight());
     }
 }

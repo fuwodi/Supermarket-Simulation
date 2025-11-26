@@ -9,8 +9,8 @@ public class ProductFactory {
     public static Product createRandomProduct(ProductType type) {
         ProductCatalog.ProductInfo info = ProductCatalog.getRandomProductInfo(type);
 
-        String id = generateId(type);
-        String batchId = "BATCH_" + LocalDate.now();
+        String id = info.getId();
+        String batchId = generateBatchId();
         LocalDate productionDate = LocalDate.now().minusDays(random.nextInt(5));
         int shelfLife = type.getShelfLifeDays();
 
@@ -25,15 +25,15 @@ public class ProductFactory {
         }
     }
 
-    public static Product createProductByName(String productName) {
-        ProductCatalog.ProductInfo info = ProductCatalog.findProductByName(productName);
+    public static Product createProductById(String productId) {
+        ProductCatalog.ProductInfo info = ProductCatalog.findProductById(productId);
         if (info == null) {
-            throw new IllegalArgumentException("Продукт не найден: " + productName);
+            throw new IllegalArgumentException("Продукт не найден по ID: " + productId);
         }
 
-        ProductType type = ProductCatalog.getProductType(productName);
-        String id = generateId(type);
-        String batchId = "BATCH_" + LocalDate.now();
+        ProductType type = ProductCatalog.getProductTypeById(productId);
+        String id = productId;
+        String batchId = generateBatchId();
         LocalDate productionDate = LocalDate.now().minusDays(random.nextInt(3));
         int shelfLife = type.getShelfLifeDays();
 
@@ -48,7 +48,7 @@ public class ProductFactory {
         }
     }
 
-    private static String generateId(ProductType type) {
-        return type.name().substring(0, 3) + "_" + System.currentTimeMillis() + "_" + random.nextInt(1000);
+    private static String generateBatchId() {
+        return "BATCH_" + LocalDate.now() + "_" + System.currentTimeMillis() + "_" + random.nextInt(1000);
     }
 }

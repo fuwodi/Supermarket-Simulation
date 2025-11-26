@@ -3,103 +3,121 @@ package supermarket.product;
 import java.util.*;
 
 public class ProductCatalog {
-    private static final Map<String, ProductInfo> productsByName = new HashMap<>();
+    private static final Map<String, ProductInfo> productsById = new HashMap<>();
     private static final Map<ProductType, List<ProductInfo>> productsByType = new HashMap<>();
 
     static {
         addProducts(ProductType.DAIRY, Arrays.asList(
-                new ProductInfo("Молоко", 80.0),
-                new ProductInfo("Йогурт", 60.0),
-                new ProductInfo("Сметана", 90.0),
-                new ProductInfo("Творог", 120.0),
-                new ProductInfo("Сыр", 300.0),
-                new ProductInfo("Кефир", 70.0),
-                new ProductInfo("Ряженка", 65.0),
-                new ProductInfo("Сливки", 110.0)
+                new ProductInfo("MILK", "Молоко", 80.0),
+                new ProductInfo("YOGURT", "Йогурт", 60.0),
+                new ProductInfo("SOUR_CREAM", "Сметана", 90.0),
+                new ProductInfo("COTTAGE_CHEESE", "Творог", 120.0),
+                new ProductInfo("CHEESE", "Сыр", 300.0),
+                new ProductInfo("KEFIR", "Кефир", 70.0),
+                new ProductInfo("RYAZHENKA", "Ряженка", 65.0),
+                new ProductInfo("CREAM", "Сливки", 110.0)
         ));
 
         addProducts(ProductType.BAKERY, Arrays.asList(
-                new ProductInfo("Хлеб белый", 50.0),
-                new ProductInfo("Хлеб черный", 55.0),
-                new ProductInfo("Батон", 45.0),
-                new ProductInfo("Булочка сдобная", 35.0),
-                new ProductInfo("Круассан", 60.0),
-                new ProductInfo("Пирожок", 40.0),
-                new ProductInfo("Багет", 70.0),
-                new ProductInfo("Сухари", 80.0)
+                new ProductInfo("WHITE_BREAD", "Хлеб белый", 50.0),
+                new ProductInfo("BLACK_BREAD", "Хлеб черный", 55.0),
+                new ProductInfo("BATON", "Батон", 45.0),
+                new ProductInfo("SWEET_BUN", "Булочка сдобная", 35.0),
+                new ProductInfo("CROISSANT", "Круассан", 60.0),
+                new ProductInfo("PIROZHOK", "Пирожок", 40.0),
+                new ProductInfo("BAGUETTE", "Багет", 70.0),
+                new ProductInfo("CRACKERS", "Сухари", 80.0)
         ));
 
         addProducts(ProductType.MEAT, Arrays.asList(
-                new ProductInfo("Говядина", 400.0),
-                new ProductInfo("Свинина", 350.0),
-                new ProductInfo("Курица", 250.0),
-                new ProductInfo("Индейка", 300.0),
-                new ProductInfo("Колбаса", 280.0),
-                new ProductInfo("Сосиски", 200.0),
-                new ProductInfo("Фарш", 320.0),
-                new ProductInfo("Бекон", 450.0)
+                new ProductInfo("BEEF", "Говядина", 400.0),
+                new ProductInfo("PORK", "Свинина", 350.0),
+                new ProductInfo("CHICKEN", "Курица", 250.0),
+                new ProductInfo("TURKEY", "Индейка", 300.0),
+                new ProductInfo("SAUSAGE", "Колбаса", 280.0),
+                new ProductInfo("SAUSAGES", "Сосиски", 200.0),
+                new ProductInfo("MINCED_MEAT", "Фарш", 320.0),
+                new ProductInfo("BACON", "Бекон", 450.0)
         ));
 
         addProducts(ProductType.VEGETABLES, Arrays.asList(
-                new ProductInfo("Картофель", 40.0),
-                new ProductInfo("Морковь", 50.0),
-                new ProductInfo("Помидоры", 150.0),
-                new ProductInfo("Огурцы", 120.0),
-                new ProductInfo("Яблоки", 80.0),
-                new ProductInfo("Бананы", 90.0),
-                new ProductInfo("Апельсины", 110.0),
-                new ProductInfo("Лук", 30.0)
+                new ProductInfo("POTATO", "Картофель", 40.0),
+                new ProductInfo("CARROT", "Морковь", 50.0),
+                new ProductInfo("TOMATO", "Помидоры", 150.0),
+                new ProductInfo("CUCUMBER", "Огурцы", 120.0),
+                new ProductInfo("APPLE", "Яблоки", 80.0),
+                new ProductInfo("BANANA", "Бананы", 90.0),
+                new ProductInfo("ORANGE", "Апельсины", 110.0),
+                new ProductInfo("ONION", "Лук", 30.0)
         ));
 
         addProducts(ProductType.GROCERIES, Arrays.asList(
-                new ProductInfo("Макароны", 60.0),
-                new ProductInfo("Рис", 80.0),
-                new ProductInfo("Гречка", 70.0),
-                new ProductInfo("Мука", 50.0),
-                new ProductInfo("Сахар", 45.0),
-                new ProductInfo("Соль", 20.0),
-                new ProductInfo("Масло подсолнечное", 100.0),
-                new ProductInfo("Чай", 120.0)
+                new ProductInfo("PASTA", "Макароны", 60.0),
+                new ProductInfo("RICE", "Рис", 80.0),
+                new ProductInfo("BUCKWHEAT", "Гречка", 70.0),
+                new ProductInfo("FLOUR", "Мука", 50.0),
+                new ProductInfo("SUGAR", "Сахар", 45.0),
+                new ProductInfo("SALT", "Соль", 20.0),
+                new ProductInfo("SUNFLOWER_OIL", "Масло подсолнечное", 100.0),
+                new ProductInfo("TEA", "Чай", 120.0)
         ));
 
         addProducts(ProductType.CHEMICALS, Arrays.asList(
-                new ProductInfo("Стиральный порошок", 200.0),
-                new ProductInfo("Мыло", 40.0),
-                new ProductInfo("Шампунь", 180.0),
-                new ProductInfo("Зубная паста", 90.0),
-                new ProductInfo("Средство для мытья посуды", 80.0),
-                new ProductInfo("Освежитель воздуха", 120.0),
-                new ProductInfo("Пятновыводитель", 150.0),
-                new ProductInfo("Кондиционер для белья", 160.0)
+                new ProductInfo("DETERGENT", "Стиральный порошок", 200.0),
+                new ProductInfo("SOAP", "Мыло", 40.0),
+                new ProductInfo("SHAMPOO", "Шампунь", 180.0),
+                new ProductInfo("TOOTHPASTE", "Зубная паста", 90.0),
+                new ProductInfo("DISH_SOAP", "Средство для мытья посуды", 80.0),
+                new ProductInfo("AIR_FRESHENER", "Освежитель воздуха", 120.0),
+                new ProductInfo("STAIN_REMOVER", "Пятновыводитель", 150.0),
+                new ProductInfo("FABRIC_SOFTENER", "Кондиционер для белья", 160.0)
         ));
 
         addProducts(ProductType.ALCOHOL, Arrays.asList(
-                new ProductInfo("Пиво", 120.0),
-                new ProductInfo("Вино красное", 400.0),
-                new ProductInfo("Вино белое", 380.0),
-                new ProductInfo("Водка", 500.0),
-                new ProductInfo("Виски", 800.0),
-                new ProductInfo("Коньяк", 700.0),
-                new ProductInfo("Шампанское", 450.0),
-                new ProductInfo("Ликер", 350.0)
+                new ProductInfo("BEER", "Пиво", 120.0),
+                new ProductInfo("RED_WINE", "Вино красное", 400.0),
+                new ProductInfo("WHITE_WINE", "Вино белое", 380.0),
+                new ProductInfo("VODKA", "Водка", 500.0),
+                new ProductInfo("WHISKEY", "Виски", 800.0),
+                new ProductInfo("COGNAC", "Коньяк", 700.0),
+                new ProductInfo("CHAMPAGNE", "Шампанское", 450.0),
+                new ProductInfo("LIQUEUR", "Ликер", 350.0)
         ));
     }
 
     private static void addProducts(ProductType type, List<ProductInfo> products) {
         productsByType.put(type, products);
         for (ProductInfo product : products) {
-            productsByName.put(product.getName().toLowerCase(), product);
+            product.setType(type);
+            productsById.put(product.getId(), product);
         }
     }
 
-    public static ProductInfo findProductByName(String name) {
-        return productsByName.get(name.toLowerCase());
+    public static ProductInfo findProductById(String id) {
+        return productsById.get(id);
     }
+
+    public static String getProductNameById(String id) {
+        ProductInfo product = findProductById(id);
+        return product != null ? product.getName() : null;
+    }
+
+    public static Double getProductPriceById(String id) {
+        ProductInfo product = findProductById(id);
+        return product != null ? product.getBasePrice() : null;
+    }
+
+
+    public static ProductType getProductTypeById(String id) {
+        ProductInfo product = findProductById(id);
+        return product != null ? product.getType() : null;
+    }
+
 
     public static ProductInfo getRandomProductInfo(ProductType type) {
         List<ProductInfo> products = productsByType.get(type);
         if (products == null || products.isEmpty()) {
-            return new ProductInfo("Товар", 100.0);
+            return new ProductInfo("PRODUCT", "Товар", 100.0);
         }
         return products.get(new Random().nextInt(products.size()));
     }
@@ -108,44 +126,41 @@ public class ProductCatalog {
         return new ArrayList<>(productsByType.getOrDefault(type, new ArrayList<>()));
     }
 
+
     public static List<ProductInfo> getAllProducts() {
-        List<ProductInfo> allProducts = new ArrayList<>();
-        for (List<ProductInfo> products : productsByType.values()) {
-            allProducts.addAll(products);
-        }
-        return allProducts;
+        return new ArrayList<>(productsById.values());
     }
 
-    public static boolean productExists(String name) {
-        return productsByName.containsKey(name.toLowerCase());
-    }
-
-    public static ProductType getProductType(String name) {
-        ProductInfo productInfo = findProductByName(name);
-        if (productInfo != null) {
-            for (Map.Entry<ProductType, List<ProductInfo>> entry : productsByType.entrySet()) {
-                if (entry.getValue().contains(productInfo)) {
-                    return entry.getKey();
-                }
-            }
-        }
-        return null;
-    }
 
     public static boolean isCountableType(ProductType type) {
         return type != ProductType.VEGETABLES && type != ProductType.MEAT;
     }
 
-    public static class ProductInfo {
-        private final String name;
-        private final double basePrice;
 
-        public ProductInfo(String name, double basePrice) {
-            this.name = name;
+    public static boolean isCountableProduct(String productId) {
+        ProductType type = getProductTypeById(productId);
+        return type != null && isCountableType(type);
+    }
+
+    public static class ProductInfo {
+        private final String id;
+        private final String productName;
+        private final double basePrice;
+        private ProductType type;
+
+        public ProductInfo(String id, String productName, double basePrice) {
+            this.id = id;
+            this.productName = productName;
             this.basePrice = basePrice;
         }
 
-        public String getName() { return name; }
+        public void setType(ProductType type) {
+            this.type = type;
+        }
+
+        public String getId() { return id; }
+        public String getName() { return productName; }
         public double getBasePrice() { return basePrice; }
+        public ProductType getType() { return type; }
     }
 }
