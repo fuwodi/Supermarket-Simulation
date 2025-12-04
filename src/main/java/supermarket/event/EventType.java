@@ -1,4 +1,4 @@
-package supermarket;
+package supermarket.event;
 
 public enum EventType {
     DELIVERY,           // Завоз товаров на склад
