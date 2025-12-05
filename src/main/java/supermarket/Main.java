@@ -3,14 +3,12 @@ import java.time.LocalDate;
 
 public class Main {
     public static void main(String[] args) {
-        System.out.println("🚀 Запуск супермаркета...");
+        System.out.println("🚀 Запуск симуляции супермаркета...");
 
         Supermarket supermarket = new Supermarket(LocalDate.now());
 
-        System.out.println("✅ Супермаркет успешно создан!");
-        System.out.println("📅 Дата: " + LocalDate.now());
+        supermarket.runSimulation(8);
 
-
-        System.out.println("\n🎉 Программа работает!");
+        System.out.println("\n✅ Симуляция завершена!");
     }
 }
