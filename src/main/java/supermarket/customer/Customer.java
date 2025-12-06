@@ -1,6 +1,8 @@
 package supermarket.customer;
 
+import supermarket.product.CountableProduct;
 import supermarket.product.Product;
+import supermarket.product.WeightableProduct;
 import supermarket.storage.SalesHall;
 
 import java.util.*;
@@ -28,7 +30,7 @@ public class Customer {
         if (totalCost <= budget && totalCost > 0) {
             if (processPurchase(cart, salesHall)) {
                 budget -= totalCost;
-                System.out.println("   🛒 " + name + " купил товаров на " + String.format("%.2f", totalCost) + " руб.");
+                System.out.println("   🛒 " + name + " купил(а) товаров на " + String.format("%.2f", totalCost) + " руб.");
                 return totalCost;
             }
         }
@@ -49,8 +51,8 @@ public class Customer {
         for (int i = 0; i < Math.min(itemsToBuy, availableProducts.size()); i++) {
             Product product = availableProducts.get(i);
 
-            if (product instanceof supermarket.product.CountableProduct) {
-                supermarket.product.CountableProduct countable = (supermarket.product.CountableProduct) product;
+            if (product instanceof CountableProduct) {
+                CountableProduct countable = (CountableProduct) product;
                 int maxQuantity = countable.getQuantity();
                 if (maxQuantity > 0) {
                     int quantity = Math.min(1 + random.nextInt(2), maxQuantity);
@@ -59,8 +61,8 @@ public class Customer {
                         cart.addItem(product.getId(), quantity, 0, product.getBatchId());
                     }
                 }
-            } else if (product instanceof supermarket.product.WeightableProduct) {
-                supermarket.product.WeightableProduct weightable = (supermarket.product.WeightableProduct) product;
+            } else if (product instanceof WeightableProduct) {
+                WeightableProduct weightable = (WeightableProduct) product;
                 double maxWeight = weightable.getWeight();
                 if (maxWeight > 0.05) {
                     double weight = Math.min(0.1 + random.nextDouble() * 0.9, maxWeight);
@@ -111,10 +113,10 @@ public class Customer {
         List<Product> batches = salesHall.findProductsById(item.getProductId());
         for (Product batch : batches) {
             if (batch.getBatchId().equals(item.getBatchId())) {
-                if (item.getQuantity() > 0 && batch instanceof supermarket.product.CountableProduct) {
-                    return ((supermarket.product.CountableProduct) batch).getQuantity() >= item.getQuantity();
-                } else if (item.getWeight() > 0 && batch instanceof supermarket.product.WeightableProduct) {
-                    return ((supermarket.product.WeightableProduct) batch).getWeight() >= item.getWeight();
+                if (item.getQuantity() > 0 && batch instanceof CountableProduct) {
+                    return ((CountableProduct) batch).getQuantity() >= item.getQuantity();
+                } else if (item.getWeight() > 0 && batch instanceof WeightableProduct) {
+                    return ((WeightableProduct) batch).getWeight() >= item.getWeight();
                 }
             }
         }
@@ -125,12 +127,12 @@ public class Customer {
         List<Product> batches = salesHall.findProductsById(item.getProductId());
         for (Product batch : batches) {
             if (batch.getBatchId().equals(item.getBatchId())) {
-                if (item.getQuantity() > 0 && batch instanceof supermarket.product.CountableProduct) {
-                    supermarket.product.CountableProduct countable = (supermarket.product.CountableProduct) batch;
+                if (item.getQuantity() > 0 && batch instanceof CountableProduct) {
+                    CountableProduct countable = (CountableProduct) batch;
                     countable.setQuantity(countable.getQuantity() - item.getQuantity());
                     System.out.println("     - " + batch.getName() + ": " + item.getQuantity() + " шт.");
-                } else if (item.getWeight() > 0 && batch instanceof supermarket.product.WeightableProduct) {
-                    supermarket.product.WeightableProduct weightable = (supermarket.product.WeightableProduct) batch;
+                } else if (item.getWeight() > 0 && batch instanceof WeightableProduct) {
+                    WeightableProduct weightable = (WeightableProduct) batch;
                     weightable.setWeight(weightable.getWeight() - item.getWeight());
                     System.out.println("     - " + batch.getName() + ": " + String.format("%.2f", item.getWeight()) + " кг");
                 }

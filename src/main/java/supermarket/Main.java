@@ -7,7 +7,7 @@ public class Main {
 
         Supermarket supermarket = new Supermarket(LocalDate.now());
 
-        supermarket.runSimulation(8);
+        supermarket.runSimulation(5);
 
         System.out.println("\n✅ Симуляция завершена!");
     }

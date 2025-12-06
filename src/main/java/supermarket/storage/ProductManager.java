@@ -2,8 +2,6 @@ package supermarket.storage;
 
 import supermarket.SupermarketConfig;
 import supermarket.product.*;
-import supermarket.storage.SalesHall;
-import supermarket.storage.Warehouse;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -20,7 +18,7 @@ public class ProductManager {
     }
 
     public void checkAndRestockAll() {
-        System.out.println("\n🔄 Товаровед проверяет запасы...");
+        System.out.println("\n🔄Товаровед проверяет запасы...");
 
         checkAndRestockWarehouse();
 
@@ -205,13 +203,13 @@ public class ProductManager {
         int productsToAdd;
 
         if (warehouse.isEmpty()) {
-            productsToAdd = 15 + random.nextInt(10); // 15-24 товара
+            productsToAdd = 15 + random.nextInt(10);
             System.out.println("🚨 Товаровед: Склад пуст! Заказываем большую партию...");
         } else if (warehouse.needsRestocking()) {
-            productsToAdd = 8 + random.nextInt(7); // 8-14 товаров
+            productsToAdd = 8 + random.nextInt(7);
             System.out.println("⚠️ Товаровед: Заказываем товары для пополнения склада...");
         } else {
-            productsToAdd = 3 + random.nextInt(4); // 3-6 товаров
+            productsToAdd = 3 + random.nextInt(4);
             System.out.println("📦 Товаровед: Регулярная доставка на склад...");
         }
 

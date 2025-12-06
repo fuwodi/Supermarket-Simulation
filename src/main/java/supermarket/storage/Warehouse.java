@@ -25,7 +25,6 @@ public class Warehouse implements ProductStorage {
             productsByBatch.put(productId, new ArrayList<>());
         }
 
-        // На складе партии всегда уникальные, просто добавляем
         productsByBatch.get(productId).add(product);
         return true;
     }
@@ -69,7 +68,6 @@ public class Warehouse implements ProductStorage {
             Map.Entry<String, List<Product>> entry = iterator.next();
             List<Product> batches = entry.getValue();
 
-            // Удаляем просроченные партии
             Iterator<Product> batchIterator = batches.iterator();
             while (batchIterator.hasNext()) {
                 Product batch = batchIterator.next();
@@ -81,7 +79,6 @@ public class Warehouse implements ProductStorage {
                 }
             }
 
-            // Если все партии товара удалены, убираем запись
             if (batches.isEmpty()) {
                 iterator.remove();
             }
@@ -128,23 +125,14 @@ public class Warehouse implements ProductStorage {
         return total;
     }
 
-    /**
-     * Проверяет, нуждается ли склад в пополнении (мало видов товаров)
-     */
     public boolean needsRestocking() {
-        return getTotalProducts() < 8; // Если меньше 8 видов товаров
+        return getTotalProducts() < 8;
     }
 
-    /**
-     * Проверяет, пустой ли склад
-     */
     public boolean isEmpty() {
         return productsByBatch.isEmpty();
     }
 
-    /**
-     * Возвращает список товаров, которых мало на складе
-     */
     public List<String> getLowStockProductIds() {
         List<String> lowStockIds = new ArrayList<>();
         for (String productId : productsByBatch.keySet()) {

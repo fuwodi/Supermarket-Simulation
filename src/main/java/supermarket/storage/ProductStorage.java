@@ -7,6 +7,8 @@ import java.time.LocalDate;
 import java.util.*;
 
 public interface ProductStorage {
+    boolean addProduct(Product product, LocalDate currentDate);
+
     List<Product> findProductsById(String productId);
 
     int removeExpiredProducts(LocalDate currentDate);

@@ -16,7 +16,7 @@ public class CustomerFactory {
         List<Customer> customers = new ArrayList<>();
 
         for (int i = 0; i < count; i++) {
-            String name = NAMES[random.nextInt(NAMES.length)] + " " + (i + 1);
+            String name = NAMES[random.nextInt(NAMES.length)];
             double budget = 800 + random.nextDouble() * 1200;
             customers.add(new Customer("CUST_" + (i + 1), name, budget));
         }

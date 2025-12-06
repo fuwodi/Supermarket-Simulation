@@ -73,16 +73,13 @@ public class Supermarket {
         dailyPurchasesCount = 0;
         double revenueAtStart = totalRevenue;
 
-        // Обрабатываем все события дня
         while (eventQueue.hasEvents()) {
             Event event = eventQueue.getNextEvent();
             processEvent(event);
         }
 
-        // Считаем выручку за день
         dailyRevenue = totalRevenue - revenueAtStart;
 
-        // Переход на следующий день
         dayNumber++;
         currentDate = currentDate.plusDays(1);
         eventQueue.advanceDay();
@@ -146,10 +143,8 @@ public class Supermarket {
     }
 
     private void handleDiscounts() {
-        // Скидки на товары с истекающим сроком
         int expiringDiscounts = salesHall.applyExpiringDiscounts(currentDate);
 
-        // Случайные скидки
         if (random.nextDouble() < 0.3) {
             salesHall.applyRandomDiscounts();
         }
@@ -168,10 +163,8 @@ public class Supermarket {
                 (warehouse.needsRestocking() ? " ⚠️ МАЛО!" : " ✅"));
         System.out.println("   🏪 Товаров в зале: " + salesHall.getTotalProducts() +
                 " (" + salesHall.getTotalBatches() + " партий)");
-        System.out.println("   👥 Активных покупателей: " + customers.size());
         System.out.println("   💵 Общая выручка: " + String.format("%.2f", totalRevenue) + " руб.");
 
-        // Дополнительная информация о состоянии склада
         if (warehouse.needsRestocking()) {
             System.out.println("   🚨 ВНИМАНИЕ: Склад нуждается в срочном пополнении!");
         }
@@ -183,7 +176,6 @@ public class Supermarket {
         for (int i = 0; i < days; i++) {
             runDay();
 
-            // Пауза между днями для читаемости
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
@@ -203,10 +195,8 @@ public class Supermarket {
         System.out.println("💰 Общая выручка: " + String.format("%.2f", totalRevenue) + " руб.");
         System.out.println("📦 Остаток на складе: " + warehouse.getTotalProducts() + " товаров");
         System.out.println("🏪 Остаток в зале: " + salesHall.getTotalProducts() + " товаров");
-        System.out.println("👥 Всего покупателей: " + customers.size());
     }
 
-    // Getters
     public Warehouse getWarehouse() { return warehouse; }
     public SalesHall getSalesHall() { return salesHall; }
     public double getTotalRevenue() { return totalRevenue; }

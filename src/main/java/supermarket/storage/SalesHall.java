@@ -30,10 +30,8 @@ public class SalesHall implements ProductStorage {
 
         List<Product> batches = productsByBatch.get(productId);
 
-        // Ищем партию с таким же batchId для объединения
         for (Product existingBatch : batches) {
             if (existingBatch.getBatchId().equals(batchId)) {
-                // Объединяем партии с одинаковым batchId
                 if (existingBatch instanceof CountableProduct && product instanceof CountableProduct) {
                     CountableProduct existingCountable = (CountableProduct) existingBatch;
                     CountableProduct newCountable = (CountableProduct) product;
@@ -48,7 +46,6 @@ public class SalesHall implements ProductStorage {
             }
         }
 
-        // Если не нашли партию для объединения, добавляем новую
         batches.add(product);
         return true;
     }
@@ -69,7 +66,6 @@ public class SalesHall implements ProductStorage {
             Map.Entry<String, List<Product>> entry = iterator.next();
             List<Product> batches = entry.getValue();
 
-            // Удаляем просроченные партии
             Iterator<Product> batchIterator = batches.iterator();
             while (batchIterator.hasNext()) {
                 Product batch = batchIterator.next();
@@ -81,7 +77,6 @@ public class SalesHall implements ProductStorage {
                 }
             }
 
-            // Если все партии товара удалены, убираем запись
             if (batches.isEmpty()) {
                 iterator.remove();
             }
@@ -157,7 +152,6 @@ public class SalesHall implements ProductStorage {
             double totalAmount = getTotalAmount(productId);
             double minStock = getMinStockForProduct(productId);
 
-            // Добавляем только если запас действительно низкий И товар еще не удален
             if (totalAmount < minStock && totalAmount > 0) {
                 lowStockIds.add(productId);
             }
