@@ -48,6 +48,31 @@ public class ProductFactory {
         }
     }
 
+    public static Product createCopy(Product original, double newAmount) {
+        String id = original.getId();
+        String batchId = original.getBatchId();
+        String name = original.getName();
+        ProductType type = original.getType();
+        double price = original.getPrice();
+        LocalDate productionDate = original.getProductionDate();
+        LocalDate expirationDate = original.getExpiryDate();
+        double discount = original.getDiscount();
+
+        // Вычисляем срок годности в днях
+        int shelfLifeDays = original.getShelfLifeDays();
+
+        if (original instanceof CountableProduct) {
+            return new CountableProduct(id, batchId, name, type, price,
+                    productionDate, shelfLifeDays, (int) newAmount);
+        } else if (original instanceof WeightableProduct) {
+            return new WeightableProduct(id, batchId, name, type, price,
+                    productionDate, shelfLifeDays, newAmount);
+        }
+
+        // Для безопасности - возвращаем null если тип неизвестен
+        return null;
+    }
+
     private static String generateBatchId() {
         return "BATCH_" + LocalDate.now() + "_" + System.currentTimeMillis() + "_" + random.nextInt(1000);
     }

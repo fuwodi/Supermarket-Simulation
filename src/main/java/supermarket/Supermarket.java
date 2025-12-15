@@ -150,23 +150,32 @@ public class Supermarket {
         }
 
         if (expiringDiscounts > 0) {
-            System.out.println("🏷️ Установлены скидки на " + expiringDiscounts + " товаров с истекающим сроком");
+            System.out.println("   🏷️ Установлены скидки на " + expiringDiscounts + " товаров с истекающим сроком");
         }
     }
 
     private void printDailySummary(double dailyRevenue, int purchasesCount) {
-        System.out.println("\n📊 Итоги дня:");
-        System.out.println("   💰 Выручка за день: " + String.format("%.2f", dailyRevenue) + " руб.");
-        System.out.println("   🛒 Совершено покупок: " + purchasesCount);
-        System.out.println("   📦 Товаров на складе: " + warehouse.getTotalProducts() +
-                " (" + warehouse.getTotalBatches() + " партий)" +
-                (warehouse.needsRestocking() ? " ⚠️ МАЛО!" : " ✅"));
-        System.out.println("   🏪 Товаров в зале: " + salesHall.getTotalProducts() +
-                " (" + salesHall.getTotalBatches() + " партий)");
-        System.out.println("   💵 Общая выручка: " + String.format("%.2f", totalRevenue) + " руб.");
+        System.out.println("\n📊 ИТОГИ ДНЯ:");
+        System.out.println("=".repeat(40));
+
+        System.out.println(String.format("💰 Выручка: %s руб. | 🛒 Покупок: %d",
+                String.format("%.2f", dailyRevenue), purchasesCount));
+
+        System.out.println(String.format("📦 Склад: %d товаров, %d партий%s",
+                warehouse.getTotalProducts(), warehouse.getTotalBatches(),
+                warehouse.needsRestocking() ? " ⚠️" : ""));
+
+        System.out.println(String.format("🏪 Зал: %d полок, %d партий",
+                salesHall.getTotalProducts(), salesHall.getTotalBatches()));
+
+        System.out.println(String.format("💵 Общая выручка: %s руб.",
+                String.format("%.2f", totalRevenue)));
+
+        // Показываем критические полки
+        salesHall.displayCriticalShelves();
 
         if (warehouse.needsRestocking()) {
-            System.out.println("   🚨 ВНИМАНИЕ: Склад нуждается в срочном пополнении!");
+            System.out.println("\n🚨 ВНИМАНИЕ: Склад нуждается в пополнении!");
         }
     }
 
@@ -189,12 +198,21 @@ public class Supermarket {
 
     private void printFinalSummary() {
         System.out.println("\n" + "=".repeat(50));
-        System.out.println("🎯 ФИНАЛЬНЫЕ РЕЗУЛЬТАТЫ СИМУЛЯЦИИ");
+        System.out.println("🎯 ФИНАЛЬНЫЕ РЕЗУЛЬТАТЫ (" + (dayNumber - 1) + " дней)");
         System.out.println("=".repeat(50));
-        System.out.println("📅 Продолжительность: " + (dayNumber - 1) + " дней");
-        System.out.println("💰 Общая выручка: " + String.format("%.2f", totalRevenue) + " руб.");
-        System.out.println("📦 Остаток на складе: " + warehouse.getTotalProducts() + " товаров");
-        System.out.println("🏪 Остаток в зале: " + salesHall.getTotalProducts() + " товаров");
+
+        System.out.println(String.format("💰 Общая выручка: %s руб.",
+                String.format("%.2f", totalRevenue)));
+
+        System.out.println(String.format("📦 Склад: %d товаров, %d партий",
+                warehouse.getTotalProducts(), warehouse.getTotalBatches()));
+
+        System.out.println(String.format("🏪 Зал: %d полок, %d партий",
+                salesHall.getTotalProducts(), salesHall.getTotalBatches()));
+
+        // Финальный отчет по критическим полкам
+        System.out.println("\n📊 ФИНАЛЬНЫЙ ОТЧЕТ ПО ПОЛКАМ:");
+        salesHall.displayCriticalShelves();
     }
 
     public Warehouse getWarehouse() { return warehouse; }

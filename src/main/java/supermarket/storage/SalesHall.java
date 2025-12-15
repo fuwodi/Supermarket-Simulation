@@ -9,111 +9,151 @@ import java.time.LocalDate;
 import java.util.*;
 
 public class SalesHall implements ProductStorage {
-    private Map<String, List<Product>> productsByBatch;
+    private Map<String, Shelf> shelvesByProductId;
+    private Map<String, String> productIdToName;
 
     public SalesHall() {
-        this.productsByBatch = new HashMap<>();
+        this.shelvesByProductId = new HashMap<>();
+        this.productIdToName = new HashMap<>();
+    }
+
+    // Создать или получить полку для товара
+    private Shelf getOrCreateShelf(Product product) {
+        String productId = product.getId();
+
+        if (!shelvesByProductId.containsKey(productId)) {
+            // Определяем максимальную вместимость для полки
+            double maxCapacity;
+            if (product instanceof CountableProduct) {
+                maxCapacity = 100.0; // Максимальное количество штук на полке
+            } else if (product instanceof WeightableProduct) {
+                maxCapacity = 50.0; // Максимальный вес в кг на полке
+            } else {
+                maxCapacity = 100.0; // Значение по умолчанию
+            }
+
+            Shelf shelf = new Shelf(productId, maxCapacity);
+            shelvesByProductId.put(productId, shelf);
+            productIdToName.put(productId, product.getName());
+        }
+
+        return shelvesByProductId.get(productId);
     }
 
     public boolean addProduct(Product product, LocalDate currentDate) {
+        // 1. Проверка срока годности
         if (product.isExpired(currentDate)) {
-            System.out.println(" Товар " + product.getName() + " просрочен и не принят в торговый зал");
+            System.out.println("   🗑️ Товар " + product.getName() + " просрочен и не принят");
             return false;
         }
 
-        String productId = product.getId();
-        String batchId = product.getBatchId();
+        // 2. Получаем соответствующую полку
+        Shelf shelf = getOrCreateShelf(product);
 
-        if (!productsByBatch.containsKey(productId)) {
-            productsByBatch.put(productId, new ArrayList<>());
-        }
+        // 3. Добавляем товар на полку
+        double actuallyAdded = shelf.addProduct(product);
 
-        List<Product> batches = productsByBatch.get(productId);
+        if (actuallyAdded > 0) {
+            // Выводим только краткую информацию
+            double originalAmount = getAmountFromProduct(product);
 
-        for (Product existingBatch : batches) {
-            if (existingBatch.getBatchId().equals(batchId)) {
-                if (existingBatch instanceof CountableProduct && product instanceof CountableProduct) {
-                    CountableProduct existingCountable = (CountableProduct) existingBatch;
-                    CountableProduct newCountable = (CountableProduct) product;
-                    existingCountable.setQuantity(existingCountable.getQuantity() + newCountable.getQuantity());
-                    return true;
-                } else if (existingBatch instanceof WeightableProduct && product instanceof WeightableProduct) {
-                    WeightableProduct existingWeightable = (WeightableProduct) existingBatch;
-                    WeightableProduct newWeightable = (WeightableProduct) product;
-                    existingWeightable.setWeight(existingWeightable.getWeight() + newWeightable.getWeight());
-                    return true;
-                }
+            if (Math.abs(actuallyAdded - originalAmount) > 0.001) {
+                // Если добавили не всё
+                System.out.println("   📦 " + product.getName() + ": " +
+                        formatAmount(actuallyAdded, product) + " из " +
+                        formatAmount(originalAmount, product) + " (ограничение полки)");
+            } else {
+                // Если добавили всё
+                System.out.println("   📦 " + product.getName() + ": +" +
+                        formatAmount(actuallyAdded, product));
             }
+            return true;
         }
 
-        batches.add(product);
-        return true;
+        return false;
+    }
+
+    private String formatAmount(double amount, Product product) {
+        if (product instanceof WeightableProduct) {
+            return String.format("%.3f кг", amount);
+        } else {
+            return String.format("%.0f шт", amount);
+        }
     }
 
     public List<Product> findProductsById(String productId) {
-        List<Product> batches = productsByBatch.get(productId);
-        if (batches != null) {
-            return new ArrayList<>(batches);
+        Shelf shelf = shelvesByProductId.get(productId);
+        if (shelf != null) {
+            return shelf.getAllBatches();
         }
         return new ArrayList<>();
     }
 
     public int removeExpiredProducts(LocalDate currentDate) {
         int removed = 0;
-        Iterator<Map.Entry<String, List<Product>>> iterator = productsByBatch.entrySet().iterator();
+        Iterator<Map.Entry<String, Shelf>> iterator = shelvesByProductId.entrySet().iterator();
 
         while (iterator.hasNext()) {
-            Map.Entry<String, List<Product>> entry = iterator.next();
-            List<Product> batches = entry.getValue();
+            Map.Entry<String, Shelf> entry = iterator.next();
+            Shelf shelf = entry.getValue();
+            String productId = entry.getKey();
 
+            // Получаем все партии с полки
+            List<Product> batches = shelf.getAllBatches();
             Iterator<Product> batchIterator = batches.iterator();
+
             while (batchIterator.hasNext()) {
                 Product batch = batchIterator.next();
                 if (batch.isExpired(currentDate)) {
-                    System.out.println("🗑️ Утилизирован просроченный товар: " +
-                            batch.getName() + " (партия: " + batch.getBatchId() + ")");
-                    batchIterator.remove();
-                    removed++;
+                    // Удаляем товар с полки
+                    if (shelf.removeProduct(batch)) {
+                        System.out.println("   🗑️ Утилизирован: " + productIdToName.get(productId) +
+                                " (партия: " + batch.getBatchId().substring(0, Math.min(10, batch.getBatchId().length())) + "...)");
+                        removed++;
+                    }
                 }
             }
 
-            if (batches.isEmpty()) {
+            // Если полка пуста, удаляем ее
+            if (shelf.isEmpty()) {
                 iterator.remove();
+                productIdToName.remove(productId);
             }
         }
         return removed;
     }
 
     public void applyDiscountToProductById(String productId, double discount) {
-        List<Product> batches = productsByBatch.get(productId);
-        if (batches != null) {
-            for (Product batch : batches) {
+        Shelf shelf = shelvesByProductId.get(productId);
+        if (shelf != null) {
+            for (Product batch : shelf.getAllBatches()) {
                 batch.setDiscount(discount);
             }
         }
     }
 
     public void applyDiscountToBatch(String productId, String batchId, double discount) {
-        List<Product> batches = productsByBatch.get(productId);
-        if (batches != null) {
-            for (Product batch : batches) {
-                if (batch.getBatchId().equals(batchId)) {
-                    batch.setDiscount(discount);
-                    break;
-                }
+        Shelf shelf = shelvesByProductId.get(productId);
+        if (shelf != null) {
+            Product batch = shelf.getBatch(batchId);
+            if (batch != null) {
+                batch.setDiscount(discount);
             }
         }
     }
 
     public int applyExpiringDiscounts(LocalDate currentDate) {
         int discountCount = 0;
-        for (List<Product> batches : productsByBatch.values()) {
-            for (Product batch : batches) {
+        for (Map.Entry<String, Shelf> entry : shelvesByProductId.entrySet()) {
+            Shelf shelf = entry.getValue();
+            String productId = entry.getKey();
+
+            for (Product batch : shelf.getAllBatches()) {
                 if (batch.expiresSoon(currentDate) && batch.getDiscount() < SupermarketConfig.EXPIRING_DISCOUNT) {
                     batch.setDiscount(SupermarketConfig.EXPIRING_DISCOUNT);
                     discountCount++;
                     System.out.println("   🏷️ Скидка на товар с истекающим сроком: " +
-                            batch.getName() + " (партия: " + batch.getBatchId() + ")");
+                            productIdToName.get(productId));
                 }
             }
         }
@@ -123,8 +163,11 @@ public class SalesHall implements ProductStorage {
     public void applyRandomDiscounts() {
         Random random = new Random();
         int discountCount = 0;
-        for (List<Product> batches : productsByBatch.values()) {
-            for (Product batch : batches) {
+
+        for (Map.Entry<String, Shelf> entry : shelvesByProductId.entrySet()) {
+            Shelf shelf = entry.getValue();
+
+            for (Product batch : shelf.getAllBatches()) {
                 if (random.nextDouble() < 0.15) {
                     double discount = SupermarketConfig.RANDOM_DISCOUNT_MIN +
                             random.nextDouble() * (SupermarketConfig.RANDOM_DISCOUNT_MAX - SupermarketConfig.RANDOM_DISCOUNT_MIN);
@@ -133,14 +176,15 @@ public class SalesHall implements ProductStorage {
                 }
             }
         }
+
         if (discountCount > 0) {
-            System.out.println("🏷️ Установлены случайные скидки на " + discountCount + " партий");
+            System.out.println("   🏷️ Установлены случайные скидки на " + discountCount + " товаров");
         }
     }
 
     public void removeAllDiscounts() {
-        for (List<Product> batches : productsByBatch.values()) {
-            for (Product batch : batches) {
+        for (Shelf shelf : shelvesByProductId.values()) {
+            for (Product batch : shelf.getAllBatches()) {
                 batch.setDiscount(0.0);
             }
         }
@@ -148,86 +192,88 @@ public class SalesHall implements ProductStorage {
 
     public List<String> getLowStockProductIds() {
         List<String> lowStockIds = new ArrayList<>();
-        for (String productId : productsByBatch.keySet()) {
-            double totalAmount = getTotalAmount(productId);
-            double minStock = getMinStockForProduct(productId);
 
-            if (totalAmount < minStock && totalAmount > 0) {
+        for (Map.Entry<String, Shelf> entry : shelvesByProductId.entrySet()) {
+            String productId = entry.getKey();
+            Shelf shelf = entry.getValue();
+
+            // Проверяем заполненность полки
+            if (shelf.needsRestocking()) {
                 lowStockIds.add(productId);
             }
         }
+
         return lowStockIds;
     }
 
-
-    public Map<String, List<Product>> getAllProducts() {
-        Map<String, List<Product>> copy = new HashMap<>();
-        for (Map.Entry<String, List<Product>> entry : productsByBatch.entrySet()) {
-            copy.put(entry.getKey(), new ArrayList<>(entry.getValue()));
-        }
-        return copy;
+    public Map<String, Shelf> getAllShelves() {
+        return new HashMap<>(shelvesByProductId);
     }
 
     public List<Product> getProductsList() {
         List<Product> allProducts = new ArrayList<>();
-        for (List<Product> batches : productsByBatch.values()) {
-            allProducts.addAll(batches);
+        for (Shelf shelf : shelvesByProductId.values()) {
+            allProducts.addAll(shelf.getAllBatches());
         }
         return allProducts;
     }
 
     public int getTotalProducts() {
-        return productsByBatch.size();
+        return shelvesByProductId.size();
     }
 
     public int getTotalBatches() {
         int total = 0;
-        for (List<Product> batches : productsByBatch.values()) {
-            total += batches.size();
+        for (Shelf shelf : shelvesByProductId.values()) {
+            total += shelf.getAllBatches().size();
         }
         return total;
     }
 
-    public Collection<List<Product>> getProductsCollection() {
-        return productsByBatch.values();
-    }
-
     public Product getProduct(String productId) {
-        List<Product> batches = productsByBatch.get(productId);
-        return (batches != null && !batches.isEmpty()) ? batches.get(0) : null;
+        Shelf shelf = shelvesByProductId.get(productId);
+        if (shelf != null && !shelf.isEmpty()) {
+            List<Product> batches = shelf.getAllBatches();
+            if (!batches.isEmpty()) {
+                return batches.get(0);
+            }
+        }
+        return null;
     }
 
     public List<Product> getBatchesForProduct(String productId) {
-        return new ArrayList<>(productsByBatch.getOrDefault(productId, new ArrayList<>()));
+        Shelf shelf = shelvesByProductId.get(productId);
+        if (shelf != null) {
+            return shelf.getAllBatches();
+        }
+        return new ArrayList<>();
     }
 
     public void removeBatch(String productId, String batchId) {
-        List<Product> batches = productsByBatch.get(productId);
-        if (batches != null) {
-            batches.removeIf(product -> product.getBatchId().equals(batchId));
-            if (batches.isEmpty()) {
-                productsByBatch.remove(productId);
+        Shelf shelf = shelvesByProductId.get(productId);
+        if (shelf != null) {
+            Product batch = shelf.getBatch(batchId);
+            if (batch != null) {
+                shelf.removeProduct(batch);
+                if (shelf.isEmpty()) {
+                    shelvesByProductId.remove(productId);
+                    productIdToName.remove(productId);
+                }
             }
         }
     }
 
     public void removeProduct(String productId) {
-        productsByBatch.remove(productId);
+        shelvesByProductId.remove(productId);
+        productIdToName.remove(productId);
     }
 
     public double getTotalAmount(String productId) {
-        List<Product> batches = productsByBatch.get(productId);
-        if (batches == null) return 0;
-
-        double total = 0;
-        for (Product batch : batches) {
-            if (batch instanceof CountableProduct) {
-                total += ((CountableProduct) batch).getQuantity();
-            } else if (batch instanceof WeightableProduct) {
-                total += ((WeightableProduct) batch).getWeight();
-            }
+        Shelf shelf = shelvesByProductId.get(productId);
+        if (shelf != null) {
+            return shelf.getCurrentAmount();
         }
-        return total;
+        return 0;
     }
 
     private double getMinStockForProduct(String productId) {
@@ -241,7 +287,108 @@ public class SalesHall implements ProductStorage {
     }
 
     public boolean isEmpty() {
-        return productsByBatch.isEmpty();
+        return shelvesByProductId.isEmpty();
     }
 
+    // Вспомогательный метод для получения количества из продукта
+    private double getAmountFromProduct(Product product) {
+        if (product instanceof CountableProduct) {
+            return ((CountableProduct) product).getQuantity();
+        } else if (product instanceof WeightableProduct) {
+            return ((WeightableProduct) product).getWeight();
+        }
+        return 0.0;
+    }
+
+    // Метод для отображения критических полок
+    public void displayCriticalShelves() {
+        List<Shelf> shelves = new ArrayList<>(shelvesByProductId.values());
+
+        // Сортируем: сначала почти пустые, потом почти полные
+        shelves.sort((s1, s2) -> {
+            boolean s1Critical = s1.getFillPercentage() < 15 || s1.getFillPercentage() > 85;
+            boolean s2Critical = s2.getFillPercentage() < 15 || s2.getFillPercentage() > 85;
+
+            if (s1Critical && !s2Critical) return -1;
+            if (!s1Critical && s2Critical) return 1;
+
+            // Обе полки критические или обе нормальные
+            return Double.compare(s1.getFillPercentage(), s2.getFillPercentage());
+        });
+
+        // Показываем только критические полки
+        boolean hasCritical = false;
+
+        for (Shelf shelf : shelves) {
+            double fill = shelf.getFillPercentage();
+            if (fill < 15 || fill > 85) {
+                if (!hasCritical) {
+                    System.out.println("⚠️ КРИТИЧЕСКИЕ СОСТОЯНИЯ ПОЛОК:");
+                    hasCritical = true;
+                }
+                printShelfStatus(shelf);
+            }
+        }
+
+        if (!hasCritical) {
+            System.out.println("✅ Все полки в норме");
+        }
+    }
+
+    private void printShelfStatus(Shelf shelf) {
+        String productName = shelf.getProductName();
+        if (productName.length() > 20) {
+            productName = productName.substring(0, 17) + "...";
+        }
+
+        double fill = shelf.getFillPercentage();
+        String icon = (fill < 15) ? "🔴" : "🟢";
+        String status = (fill < 15) ? "МАЛО" : "МНОГО";
+
+        String fillBar = getCompactFillBar(fill);
+        String amountInfo = getShelfAmountInfo(shelf);
+
+        System.out.println(String.format("   %s %-20s %s %5.0f%% (%s) %s",
+                icon,
+                productName,
+                fillBar,
+                fill,
+                status,
+                amountInfo));
+    }
+
+    private String getCompactFillBar(double percentage) {
+        int filledBlocks = (int) (percentage / 10);
+        StringBuilder bar = new StringBuilder("[");
+
+        for (int i = 0; i < 10; i++) {
+            if (i < filledBlocks) {
+                bar.append("▓");
+            } else {
+                bar.append("░");
+            }
+        }
+        bar.append("]");
+        return bar.toString();
+    }
+
+    private String getShelfAmountInfo(Shelf shelf) {
+        double amount = shelf.getCurrentAmount();
+        double max = shelf.getMaxCapacity();
+
+        if (shelf.isEmpty()) {
+            return "пусто";
+        }
+
+        Product sample = shelf.getAllBatches().get(0);
+        if (sample instanceof WeightableProduct) {
+            return String.format("%.3f/%.1f кг", amount, max);
+        } else {
+            return String.format("%.0f/%.0f шт", amount, max);
+        }
+    }
+
+    public String getProductName(String productId) {
+        return productIdToName.get(productId);
+    }
 }

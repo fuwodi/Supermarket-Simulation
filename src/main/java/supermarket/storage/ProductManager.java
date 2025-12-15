@@ -18,13 +18,12 @@ public class ProductManager {
     }
 
     public void checkAndRestockAll() {
-        System.out.println("\n🔄Товаровед проверяет запасы...");
+        System.out.println("\n🔄 Товаровед проверяет запасы...");
 
         checkAndRestockWarehouse();
 
         checkAndRestockSalesHall();
     }
-
 
     public void checkAndRestockWarehouse() {
         if (warehouse.isEmpty() || warehouse.needsRestocking()) {
@@ -33,7 +32,6 @@ public class ProductManager {
             restockLowWarehouseItems();
         }
     }
-
 
     private void handleWarehouseRestocking() {
         if (warehouse.isEmpty()) {
@@ -55,9 +53,8 @@ public class ProductManager {
                 System.out.println("   📦 На склад добавлен: " + product.getName());
             }
         }
-        System.out.println("✅ Товаровед пополнил склад: +" + addedCount + " товаров");
+        System.out.println("   ✅ Товаровед пополнил склад: +" + addedCount + " товаров");
     }
-
 
     private void restockLowWarehouseItems() {
         List<String> lowStockProducts = warehouse.getLowStockProductIds();
@@ -80,10 +77,9 @@ public class ProductManager {
         }
 
         if (restockedCount > 0) {
-            System.out.println("✅ Товаровед пополнил " + restockedCount + " позиций на складе");
+            System.out.println("   ✅ Товаровед пополнил " + restockedCount + " позиций на складе");
         }
     }
-
 
     public void checkAndRestockSalesHall() {
         if (salesHall.getTotalProducts() == 0) {
@@ -104,59 +100,51 @@ public class ProductManager {
         }
 
         if (restockedCount == 0 && !lowStockProducts.isEmpty()) {
-            System.out.println("ℹ️ Товаровед: Нет товаров на складе для пополнения зала");
+            System.out.println("   ℹ️ Товаровед: Нет товаров на складе для пополнения зала");
         }
     }
 
-
     public void transferProductsToHall() {
+        System.out.println("\n🔄 Перемещение товаров в зал:");
+
         int transferredCount = 0;
         int maxTransfers = 10;
 
         Map<String, List<Product>> allProducts = warehouse.getAllProducts();
+        List<Product> availableProducts = new ArrayList<>();
 
-        if (salesHall.getTotalProducts() == 0) {
-            System.out.println("🔄 Товаровед: торговый зал пуст, начинаем первоначальное заполнение");
-            for (Map.Entry<String, List<Product>> entry : allProducts.entrySet()) {
-                if (transferredCount >= maxTransfers) break;
+        // Собираем все доступные товары
+        for (Map.Entry<String, List<Product>> entry : allProducts.entrySet()) {
+            availableProducts.addAll(entry.getValue());
+        }
 
-                String productId = entry.getKey();
-                List<Product> batches = entry.getValue();
+        // Сортируем по приоритету: сначала товары с низкими запасами в зале
+        availableProducts.sort((p1, p2) -> {
+            double stock1 = salesHall.getTotalAmount(p1.getId());
+            double stock2 = salesHall.getTotalAmount(p2.getId());
+            return Double.compare(stock1, stock2); // Сначала самые низкие запасы
+        });
 
-                for (Product product : batches) {
-                    if (transferredCount >= maxTransfers) break;
+        for (Product product : availableProducts) {
+            if (transferredCount >= maxTransfers) break;
 
-                    if (salesHall.addProduct(product, LocalDate.now())) {
-                        warehouse.removeBatch(productId, product.getBatchId());
-                        transferredCount++;
-                        System.out.println("   📦 Товаровед переместил: " + product.getName());
-                    }
-                }
-            }
-        } else {
-            for (Map.Entry<String, List<Product>> entry : allProducts.entrySet()) {
-                if (transferredCount >= maxTransfers) break;
+            String productId = product.getId();
+            double hallStock = salesHall.getTotalAmount(productId);
+            double minStock = getMinStockForProduct(productId);
 
-                String productId = entry.getKey();
-                if (needsRestocking(productId)) {
-                    List<Product> batches = entry.getValue();
-                    for (Product product : batches) {
-                        if (transferredCount >= maxTransfers) break;
-
-                        if (salesHall.addProduct(product, LocalDate.now())) {
-                            warehouse.removeBatch(productId, product.getBatchId());
-                            transferredCount++;
-                            System.out.println("   📦 Товаровед переместил: " + product.getName());
-                        }
-                    }
+            // Перемещаем только если нужно пополнить
+            if (hallStock < minStock * 1.5) {
+                if (salesHall.addProduct(product, LocalDate.now())) {
+                    warehouse.removeBatch(productId, product.getBatchId());
+                    transferredCount++;
                 }
             }
         }
 
         if (transferredCount > 0) {
-            System.out.println("🚚 Товаровед переместил " + transferredCount + " товаров в торговый зал");
-        } else if (salesHall.getTotalProducts() == 0) {
-            System.out.println("⚠️ Товаровед: не удалось переместить товары в пустой зал");
+            System.out.println("   ✅ Перемещено: " + transferredCount + " товаров");
+        } else {
+            System.out.println("   ℹ️ Перемещение не требуется");
         }
     }
 
@@ -168,17 +156,15 @@ public class ProductManager {
             if (salesHall.addProduct(product, LocalDate.now())) {
                 warehouse.removeBatch(productId, product.getBatchId());
                 restocked++;
-                System.out.println("   🔄 Товаровед пополнил в зале: " + product.getName());
                 break;
             }
         }
 
         if (restocked > 0) {
-            System.out.println("✅ Товаровед пополнил товар в зале: " +
-                    ProductCatalog.getProductNameById(productId));
+            String productName = ProductCatalog.getProductNameById(productId);
+            System.out.println("   🔄 Товаровед пополнил в зале: " + productName);
         }
     }
-
 
     private boolean needsRestocking(String productId) {
         double currentAmount = salesHall.getTotalAmount(productId);
@@ -224,7 +210,7 @@ public class ProductManager {
         }
 
         if (addedCount > 0) {
-            System.out.println("✅ Товаровед принял на склад: " + addedCount + " товаров");
+            System.out.println("   ✅ Товаровед принял на склад: " + addedCount + " товаров");
         }
     }
 }
