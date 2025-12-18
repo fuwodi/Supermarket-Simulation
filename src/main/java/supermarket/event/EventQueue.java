@@ -31,6 +31,7 @@ public class EventQueue {
         addEvent(new Event(EventType.TRANSFER_TO_HALL, currentDate,
                 "Товаровед перемещает товары в торговый зал"));
 
+
         for (int i = 0; i < customerCount; i++) {
             addEvent(new Event(EventType.PURCHASE, currentDate,
                     "Покупка покупателя #" + (i + 1)));

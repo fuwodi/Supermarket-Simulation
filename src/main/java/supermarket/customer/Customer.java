@@ -1,147 +1,186 @@
 package supermarket.customer;
 
-import supermarket.product.CountableProduct;
 import supermarket.product.Product;
-import supermarket.product.WeightableProduct;
 import supermarket.storage.SalesHall;
-
 import java.util.*;
 
 public class Customer {
-    private final String id;
-    private final String name;
+    private String id;
+    private String name;
     private double budget;
-    private final Random random;
+    private CustomerPreferences preferences;
+    private DiscountCard discountCard;
+    private Random random;
+    private ShoppingCart shoppingCart;
+    private double baseBudget;
 
-    public Customer(String id, String name, double budget) {
+    // Конструктор для существующего кода
+    public Customer(String id, String name, double baseBudget, CustomerPreferences preferences) {
         this.id = id;
         this.name = name;
-        this.budget = budget;
+        this.baseBudget = baseBudget;
+        this.budget = baseBudget * (0.7 + Math.random() * 0.6); // 70-130% от базового
+        this.preferences = preferences;
         this.random = new Random();
+        this.shoppingCart = new ShoppingCart();
+        this.discountCard = null;
     }
 
+    // Конструктор для PredefinedCustomers (с картой)
+    public Customer(String id, String name, CustomerPreferences.PreferenceType preferenceType, DiscountCard discountCard) {
+        this.id = id;
+        this.name = name;
+        this.preferences = new CustomerPreferences(preferenceType);
+        this.random = new Random();
+        this.shoppingCart = new ShoppingCart();
+        this.baseBudget = 1200 + random.nextDouble() * 600; // примерный бюджет
+        this.budget = this.baseBudget * (0.7 + random.nextDouble() * 0.6);
+        this.discountCard = discountCard;
+    }
+
+    public boolean hasDiscountCard() {
+        return discountCard != null;
+    }
+
+    public DiscountCard getDiscountCard() {
+        return discountCard;
+    }
+
+    public String getName() { return name; }
+    public double getBudget() { return budget; }
+    public double getBaseBudget() { return baseBudget; }
+    public CustomerPreferences getPreferences() { return preferences; }
+    public String getId() { return id; }
+    public ShoppingCart getShoppingCart() { return shoppingCart; }
+
+    public void setBudget(double budget) {
+        this.budget = budget;
+    }
+
+    // Восстановление бюджета
+    public void restoreBudget() {
+        this.budget = 500 + random.nextDouble() * 500;
+    }
+
+    // Метод для выбора товаров
+    public List<Product> selectProducts(SalesHall salesHall) {
+        List<Product> allProducts = salesHall.getProductsList();
+        List<Product> selected = new ArrayList<>();
+        List<Product> preferred = new ArrayList<>();
+
+        // Ищем любимые товары
+        for (Product product : allProducts) {
+            if (preferences.isFavoriteProduct(product.getId()) && product.getPrice() <= budget) {
+                preferred.add(product);
+            }
+        }
+
+        // Если есть любимые, берем до 3
+        if (!preferred.isEmpty()) {
+            Collections.shuffle(preferred);
+            int maxProducts = Math.min(3, preferred.size());
+            for (int i = 0; i < maxProducts; i++) {
+                Product product = preferred.get(i);
+                if (product.getPrice() <= budget) {
+                    selected.add(product);
+                    // budget -= product.getPrice(); // Списание будет в makePurchase
+                }
+            }
+        } else {
+            // Если нет любимых, берем случайные
+            List<Product> affordable = new ArrayList<>();
+            for (Product product : allProducts) {
+                if (product.getPrice() <= budget * 0.3) { // Не дороже 30% бюджета
+                    affordable.add(product);
+                }
+            }
+
+            if (!affordable.isEmpty()) {
+                Collections.shuffle(affordable);
+                int maxProducts = Math.min(2, affordable.size());
+                for (int i = 0; i < maxProducts; i++) {
+                    selected.add(affordable.get(i));
+                }
+            }
+        }
+
+        return selected;
+    }
+
+    // Метод покупки с учетом скидочной карты
     public double makePurchase(SalesHall salesHall) {
-        ShoppingCart cart = createShoppingCart(salesHall);
-        if (cart.getItems().isEmpty()) {
-            return 0.0;
+        System.out.println("\n👤 " + name + " (" + preferences.getDescription() +
+                ") | Бюджет: " + String.format("%.2f", budget) + " руб.");
+
+        if (hasDiscountCard()) {
+            System.out.println("   🎫 " + discountCard.toString());
         }
 
-        double totalCost = calculateTotal(cart, salesHall);
-        if (totalCost <= budget && totalCost > 0) {
-            if (processPurchase(cart, salesHall)) {
-                budget -= totalCost;
-                System.out.println("   🛒 " + name + " купил(а) товаров на " + String.format("%.2f", totalCost) + " руб.");
-                return totalCost;
-            }
-        }
-        return 0.0;
-    }
+        List<Product> selectedProducts = selectProducts(salesHall);
 
-    private ShoppingCart createShoppingCart(SalesHall salesHall) {
-        ShoppingCart cart = new ShoppingCart();
-        List<Product> availableProducts = salesHall.getProductsList();
-
-        if (availableProducts.isEmpty()) {
-            return cart;
+        if (selectedProducts.isEmpty()) {
+            System.out.println("   ❌ Не нашел подходящих товаров");
+            return 0;
         }
 
-        int itemsToBuy = 1 + random.nextInt(3);
-        Collections.shuffle(availableProducts);
+        double total = 0;
 
-        for (int i = 0; i < Math.min(itemsToBuy, availableProducts.size()); i++) {
-            Product product = availableProducts.get(i);
+        // Показываем и считаем товары
+        for (Product product : selectedProducts) {
+            double price = product.getPrice();
 
-            if (product instanceof CountableProduct) {
-                CountableProduct countable = (CountableProduct) product;
-                int maxQuantity = countable.getQuantity();
-                if (maxQuantity > 0) {
-                    int quantity = Math.min(1 + random.nextInt(2), maxQuantity);
-                    double itemCost = product.getFinalPrice() * quantity;
-                    if (itemCost <= budget * 0.5) {
-                        cart.addItem(product.getId(), quantity, 0, product.getBatchId());
-                    }
-                }
-            } else if (product instanceof WeightableProduct) {
-                WeightableProduct weightable = (WeightableProduct) product;
-                double maxWeight = weightable.getWeight();
-                if (maxWeight > 0.05) {
-                    double weight = Math.min(0.1 + random.nextDouble() * 0.9, maxWeight);
-                    double itemCost = product.getFinalPrice() * weight;
-                    if (itemCost <= budget * 0.5) {
-                        cart.addItem(product.getId(), 0, weight, product.getBatchId());
-                    }
+            if (hasDiscountCard() && product.getDiscount() > 0) {
+                double discountedPrice = product.getFinalPrice();
+                System.out.println("   🛒 " + product.getName() +
+                        " - " + String.format("%.2f", price) + " руб." +
+                        " → " + String.format("%.2f", discountedPrice) + " руб. 🎫" +
+                        " (-" + (int)(product.getDiscount() * 100) + "%)");
+                total += discountedPrice;
+            } else {
+                System.out.println("   🛒 " + product.getName() +
+                        " - " + String.format("%.2f", price) + " руб.");
+                total += price;
+
+                if (product.getDiscount() > 0 && !hasDiscountCard()) {
+                    System.out.println("      ⚠️  Скидка " + (int)(product.getDiscount() * 100) +
+                            "% только для владельцев карт!");
                 }
             }
         }
 
-        return cart;
-    }
-
-    private double calculateTotal(ShoppingCart cart, SalesHall salesHall) {
-        double total = 0.0;
-
-        for (ShoppingCart.CartItem item : cart.getItems().values()) {
-            List<Product> products = salesHall.findProductsById(item.getProductId());
-            if (!products.isEmpty()) {
-                Product product = products.get(0);
-                if (item.getQuantity() > 0) {
-                    total += product.getFinalPrice() * item.getQuantity();
-                } else if (item.getWeight() > 0) {
-                    total += product.getFinalPrice() * item.getWeight();
-                }
+        // Списание баллов
+        double pointsDiscount = 0;
+        if (hasDiscountCard()) {
+            pointsDiscount = discountCard.usePoints(total);
+            if (pointsDiscount > 0) {
+                System.out.println("   💳 Списано баллов: " + (int)pointsDiscount);
+                total -= pointsDiscount;
+                if (total < 0) total = 0;
             }
         }
 
+        // Накопление баллов
+        if (hasDiscountCard()) {
+            discountCard.addPoints(total);
+            System.out.println("   💰 Итог: " + String.format("%.2f", total) +
+                    " руб. | Баланс: " + discountCard.getPoints() + " баллов");
+        } else {
+            System.out.println("   💰 Итог: " + String.format("%.2f", total) + " руб.");
+        }
+
+        // Удаляем товары из зала
+        for (Product product : selectedProducts) {
+            salesHall.removeBatch(product.getId(), product.getBatchId());
+        }
+
+        budget -= total;
         return total;
     }
 
-    private boolean processPurchase(ShoppingCart cart, SalesHall salesHall) {
-        for (ShoppingCart.CartItem item : cart.getItems().values()) {
-            if (!isItemAvailable(item, salesHall)) {
-                return false;
-            }
-        }
-
-        for (ShoppingCart.CartItem item : cart.getItems().values()) {
-            removePurchasedItem(item, salesHall);
-        }
-
-        return true;
+    @Override
+    public String toString() {
+        return name + " (" + preferences.getDescription() + ") - " +
+                String.format("%.2f", budget) + " руб." +
+                (hasDiscountCard() ? " 🎫" : "");
     }
-
-    private boolean isItemAvailable(ShoppingCart.CartItem item, SalesHall salesHall) {
-        List<Product> batches = salesHall.findProductsById(item.getProductId());
-        for (Product batch : batches) {
-            if (batch.getBatchId().equals(item.getBatchId())) {
-                if (item.getQuantity() > 0 && batch instanceof CountableProduct) {
-                    return ((CountableProduct) batch).getQuantity() >= item.getQuantity();
-                } else if (item.getWeight() > 0 && batch instanceof WeightableProduct) {
-                    return ((WeightableProduct) batch).getWeight() >= item.getWeight();
-                }
-            }
-        }
-        return false;
-    }
-
-    private void removePurchasedItem(ShoppingCart.CartItem item, SalesHall salesHall) {
-        List<Product> batches = salesHall.findProductsById(item.getProductId());
-        for (Product batch : batches) {
-            if (batch.getBatchId().equals(item.getBatchId())) {
-                if (item.getQuantity() > 0 && batch instanceof CountableProduct) {
-                    CountableProduct countable = (CountableProduct) batch;
-                    countable.setQuantity(countable.getQuantity() - item.getQuantity());
-                    System.out.println("     - " + batch.getName() + ": " + item.getQuantity() + " шт.");
-                } else if (item.getWeight() > 0 && batch instanceof WeightableProduct) {
-                    WeightableProduct weightable = (WeightableProduct) batch;
-                    weightable.setWeight(weightable.getWeight() - item.getWeight());
-                    System.out.println("     - " + batch.getName() + ": " + String.format("%.2f", item.getWeight()) + " кг");
-                }
-                break;
-            }
-        }
-    }
-
-    public String getId() { return id; }
-    public String getName() { return name; }
-    public double getBudget() { return budget; }
 }

@@ -21,4 +21,7 @@ public class SupermarketConfig {
 
     public static final int SALES_HALL_MIN_COUNTABLE = 10;
     public static final double SALES_HALL_MIN_WEIGHTABLE = 5.0;
+
+    public static final int SHELF_MAX_COUNTABLE = 25;
+    public static final double SHELF_MAX_WEIGHTABLE = 25;
 }

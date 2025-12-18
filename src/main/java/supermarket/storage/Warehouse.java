@@ -15,7 +15,7 @@ public class Warehouse implements ProductStorage {
 
     public boolean addProduct(Product product, LocalDate currentDate) {
         if (product.isExpired(currentDate)) {
-            System.out.println(" Товар " + product.getName() + " просрочен и не принят на склад");
+            System.out.println(" Товар " + product.getName() + " не валиден и не принят на склад");
             return false;
         }
 

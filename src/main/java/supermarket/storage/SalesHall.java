@@ -3,6 +3,7 @@ package supermarket.storage;
 import supermarket.SupermarketConfig;
 import supermarket.product.CountableProduct;
 import supermarket.product.Product;
+import supermarket.product.ProductCatalog;
 import supermarket.product.WeightableProduct;
 
 import java.time.LocalDate;
@@ -22,14 +23,12 @@ public class SalesHall implements ProductStorage {
         String productId = product.getId();
 
         if (!shelvesByProductId.containsKey(productId)) {
-            // Определяем максимальную вместимость для полки
+            // Определяем максимальную вместимость для полки в зависимости от типа товара
             double maxCapacity;
-            if (product instanceof CountableProduct) {
-                maxCapacity = 100.0; // Максимальное количество штук на полке
-            } else if (product instanceof WeightableProduct) {
-                maxCapacity = 50.0; // Максимальный вес в кг на полке
+            if (ProductCatalog.isCountableType(product.getType())) {
+                maxCapacity = SupermarketConfig.SHELF_MAX_COUNTABLE;
             } else {
-                maxCapacity = 100.0; // Значение по умолчанию
+                maxCapacity = SupermarketConfig.SHELF_MAX_WEIGHTABLE;
             }
 
             Shelf shelf = new Shelf(productId, maxCapacity);
@@ -43,7 +42,7 @@ public class SalesHall implements ProductStorage {
     public boolean addProduct(Product product, LocalDate currentDate) {
         // 1. Проверка срока годности
         if (product.isExpired(currentDate)) {
-            System.out.println("   🗑️ Товар " + product.getName() + " просрочен и не принят");
+            System.out.println("   ❌ Товар " + product.getName() + " просрочен и не принят в торговый зал");
             return false;
         }
 
@@ -54,7 +53,6 @@ public class SalesHall implements ProductStorage {
         double actuallyAdded = shelf.addProduct(product);
 
         if (actuallyAdded > 0) {
-            // Выводим только краткую информацию
             double originalAmount = getAmountFromProduct(product);
 
             if (Math.abs(actuallyAdded - originalAmount) > 0.001) {
@@ -107,8 +105,8 @@ public class SalesHall implements ProductStorage {
                 if (batch.isExpired(currentDate)) {
                     // Удаляем товар с полки
                     if (shelf.removeProduct(batch)) {
-                        System.out.println("   🗑️ Утилизирован: " + productIdToName.get(productId) +
-                                " (партия: " + batch.getBatchId().substring(0, Math.min(10, batch.getBatchId().length())) + "...)");
+                        System.out.println("   🗑️ Утилизирован из зала: " + productIdToName.get(productId) +
+                                " (партия: " + batch.getBatchId() + ")");
                         removed++;
                     }
                 }
@@ -300,37 +298,28 @@ public class SalesHall implements ProductStorage {
         return 0.0;
     }
 
-    // Метод для отображения критических полок
+    // Метод для отображения полок с заполнением менее 15%
     public void displayCriticalShelves() {
-        List<Shelf> shelves = new ArrayList<>(shelvesByProductId.values());
+        // Собираем все полки с заполнением менее 15%
+        List<Shelf> criticalShelves = new ArrayList<>();
 
-        // Сортируем: сначала почти пустые, потом почти полные
-        shelves.sort((s1, s2) -> {
-            boolean s1Critical = s1.getFillPercentage() < 15 || s1.getFillPercentage() > 85;
-            boolean s2Critical = s2.getFillPercentage() < 15 || s2.getFillPercentage() > 85;
-
-            if (s1Critical && !s2Critical) return -1;
-            if (!s1Critical && s2Critical) return 1;
-
-            // Обе полки критические или обе нормальные
-            return Double.compare(s1.getFillPercentage(), s2.getFillPercentage());
-        });
-
-        // Показываем только критические полки
-        boolean hasCritical = false;
-
-        for (Shelf shelf : shelves) {
-            double fill = shelf.getFillPercentage();
-            if (fill < 15 || fill > 85) {
-                if (!hasCritical) {
-                    System.out.println("⚠️ КРИТИЧЕСКИЕ СОСТОЯНИЯ ПОЛОК:");
-                    hasCritical = true;
-                }
-                printShelfStatus(shelf);
+        for (Map.Entry<String, Shelf> entry : shelvesByProductId.entrySet()) {
+            Shelf shelf = entry.getValue();
+            if (shelf.getFillPercentage() < 15.0) {
+                criticalShelves.add(shelf);
             }
         }
 
-        if (!hasCritical) {
+        // Сортируем по проценту заполнения (от меньшего к большему)
+        criticalShelves.sort((s1, s2) -> Double.compare(s1.getFillPercentage(), s2.getFillPercentage()));
+
+        // Выводим результат
+        if (!criticalShelves.isEmpty()) {
+            System.out.println("⚠️ ПОЛКИ С МАЛЫМ ЗАПАСОМ (<15%):");
+            for (Shelf shelf : criticalShelves) {
+                printShelfStatus(shelf);
+            }
+        } else {
             System.out.println("✅ Все полки в норме");
         }
     }
@@ -342,34 +331,12 @@ public class SalesHall implements ProductStorage {
         }
 
         double fill = shelf.getFillPercentage();
-        String icon = (fill < 15) ? "🔴" : "🟢";
-        String status = (fill < 15) ? "МАЛО" : "МНОГО";
-
-        String fillBar = getCompactFillBar(fill);
         String amountInfo = getShelfAmountInfo(shelf);
 
-        System.out.println(String.format("   %s %-20s %s %5.0f%% (%s) %s",
-                icon,
+        System.out.println(String.format("   🔴 %-20s %5.0f%% (%s)",
                 productName,
-                fillBar,
                 fill,
-                status,
                 amountInfo));
-    }
-
-    private String getCompactFillBar(double percentage) {
-        int filledBlocks = (int) (percentage / 10);
-        StringBuilder bar = new StringBuilder("[");
-
-        for (int i = 0; i < 10; i++) {
-            if (i < filledBlocks) {
-                bar.append("▓");
-            } else {
-                bar.append("░");
-            }
-        }
-        bar.append("]");
-        return bar.toString();
     }
 
     private String getShelfAmountInfo(Shelf shelf) {
@@ -382,7 +349,7 @@ public class SalesHall implements ProductStorage {
 
         Product sample = shelf.getAllBatches().get(0);
         if (sample instanceof WeightableProduct) {
-            return String.format("%.3f/%.1f кг", amount, max);
+            return String.format("%.1f/%.0f кг", amount, max);
         } else {
             return String.format("%.0f/%.0f шт", amount, max);
         }

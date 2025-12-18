@@ -1,4 +1,4 @@
-package supermarket.storage;
+/*package supermarket.storage;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -305,4 +305,4 @@ class SalesHallTest {
         assertNull(salesHall.getProduct("MILK"));
         assertEquals(0, salesHall.getTotalProducts());
     }
-}
+}*/

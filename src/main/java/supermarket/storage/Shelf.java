@@ -49,27 +49,17 @@ public class Shelf {
         return getFillPercentage() < 30.0;
     }
 
-    public boolean isAlmostFull() {
-        return getFillPercentage() > 85.0;
-    }
-
     public boolean isEmpty() {
         return batchesByBatchId.isEmpty();
     }
 
     public List<Product> getAllBatches() {
-        // Сортируем партии по дате производства (сначала самые старые)
-        List<Product> batches = new ArrayList<>(batchesByBatchId.values());
-        batches.sort(Comparator.comparing(Product::getProductionDate));
-        return batches;
+        // Возвращаем все партии
+        return new ArrayList<>(batchesByBatchId.values());
     }
 
     public Product getBatch(String batchId) {
         return batchesByBatchId.get(batchId);
-    }
-
-    public boolean hasSpaceFor(double amount) {
-        return amount <= getAvailableSpace();
     }
 
     // Основной метод добавления товара на полку

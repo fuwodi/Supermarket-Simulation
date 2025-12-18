@@ -7,18 +7,42 @@ public class CustomerFactory {
             "Иван Иванов", "Мария Петрова", "Алексей Сидоров", "Елена Козлова",
             "Дмитрий Новиков", "Ольга Морозова", "Сергей Волков", "Наталья Лебедева",
             "Андрей Соловьев", "Татьяна Кузнецова", "Павел Васильев", "Юлия Павлова",
-            "Анна Семенова", "Михаил Федоров", "Екатерина Никитина"
+            "Анна Семенова", "Михаил Федоров", "Екатерина Никитина",
+            "Артем Орлов", "Светлана Зайцева", "Владимир Медведев", "Ирина Егорова",
+            "Константин Тихонов"
     };
 
     private static final Random random = new Random();
 
-    public static List<Customer> createCustomers(int count) {
-        List<Customer> customers = new ArrayList<>();
+    private static final CustomerPreferences.PreferenceType[] PREFERENCE_TYPES = {
+            CustomerPreferences.PreferenceType.FAMILY,
+            CustomerPreferences.PreferenceType.FAMILY,
+            CustomerPreferences.PreferenceType.BUDGET,
+            CustomerPreferences.PreferenceType.BUDGET,
+            CustomerPreferences.PreferenceType.HEALTHY,
+            CustomerPreferences.PreferenceType.GOURMET,
+            CustomerPreferences.PreferenceType.STUDENT,
+            CustomerPreferences.PreferenceType.STUDENT
+    };
 
-        for (int i = 0; i < count; i++) {
-            String name = NAMES[random.nextInt(NAMES.length)];
-            double budget = 800 + random.nextDouble() * 1200;
-            customers.add(new Customer("CUST_" + (i + 1), name, budget));
+    // Только создание пула покупателей
+    public static List<Customer> createCustomerPool() {
+        List<Customer> customers = new ArrayList<>();
+        List<String> availableNames = new ArrayList<>(Arrays.asList(NAMES));
+        Collections.shuffle(availableNames);
+
+        for (int i = 0; i < 20; i++) {
+            String name = availableNames.get(i % availableNames.size()) + " #" + (i+1);
+            double baseBudget = 1200 + random.nextDouble() * 1800;
+
+            CustomerPreferences.PreferenceType prefType = PREFERENCE_TYPES[
+                    random.nextInt(PREFERENCE_TYPES.length)
+                    ];
+
+            CustomerPreferences preferences = new CustomerPreferences(prefType);
+            Customer customer = new Customer("CUST_" + (i + 1), name, baseBudget, preferences);
+
+            customers.add(customer);
         }
 
         return customers;
